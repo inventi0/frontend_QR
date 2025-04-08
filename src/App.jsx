@@ -1,15 +1,20 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.scss'
+import { useState } from "react";
+import "./App.scss";
+import { Modal } from "./components/Modal/Modal";
+import { Login } from "./components/Login/Login";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [modalActive, setModalActive] = useState(false);
 
   return (
     <>
+      <button onClick={() => setModalActive(!modalActive)}>нажми</button>
+      <Modal active={modalActive} setActive={setModalActive}>
+        <Login/>
+        <button onClick={() => setModalActive(!modalActive)}>нажми</button>
+      </Modal>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
