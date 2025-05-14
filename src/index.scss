@@ -1,5 +1,14 @@
 @import url("./utils/normalize.scss");
 
+@font-face {
+  font-family: 'Bicubik';
+  src: local('Bicubik'), 
+       url('../src/fonts/Bicubik.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
@@ -7,21 +16,4 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
-
-ul {
-  list-style-type: none;
-}
-
-iframe {
-  width: 100%;
-
-  @media (max-width: 525px) {
-    height: 300px;
-  }
 }

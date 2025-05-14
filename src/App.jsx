@@ -10,8 +10,7 @@ function App() {
     <>
       <button onClick={() => setModalActive(!modalActive)}>нажми</button>
       <Modal active={modalActive} setActive={setModalActive}>
-        <Login/>
-        <button onClick={() => setModalActive(!modalActive)}>нажми</button>
+        <Login onClickHandler={() => setModalActive(!modalActive)} />
       </Modal>
     </>
   );
