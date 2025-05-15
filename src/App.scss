@@ -1,6 +1,21 @@
 #root {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 20px;
+}
+
+.range {
+  &__text {
+    color: white;
+    margin-top: 10px;
+    padding-bottom: 15px;
+    line-height: 30.09px;
+    border-bottom: 2px solid white;
+  }
+
+  &__banners {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
 }

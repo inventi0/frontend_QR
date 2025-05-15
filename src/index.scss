@@ -1,9 +1,16 @@
 @import url("./utils/normalize.scss");
 
 @font-face {
-  font-family: 'Bicubik';
-  src: local('Bicubik'), 
-       url('../src/fonts/Bicubik.woff') format('woff');
+  font-family: "Bicubik";
+  src: local("Bicubik"), url("../src/fonts/Bicubik.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Akony";
+  src: local("Akony"), url("../src/fonts/Akony.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
