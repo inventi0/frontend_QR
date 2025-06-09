@@ -22,7 +22,7 @@ export const Login = ({ onClickHandler }) => {
       </button>
 
       <div className="login-form">
-        <div className="login-title">ACCOUNT LOG IN</div>
+        <div className="login-title">Авторизация</div>
 
         <div className="login-input-wrapper">
           <span className="icon">
@@ -86,7 +86,6 @@ export const Login = ({ onClickHandler }) => {
         <button className="login-button">LOGIN</button>
 
         <div className="login-footer">
-          <span className="login-link">Зарегистрироваться</span>
           <span className="login-link">Забыл пароль?</span>
         </div>
       </div>

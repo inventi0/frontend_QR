@@ -19,3 +19,19 @@
     margin-top: 20px;
   }
 }
+
+.profile {
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  height: 100vh;
+  padding: 2rem;
+  color: white;
+
+  &__list {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+}

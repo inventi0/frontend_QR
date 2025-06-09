@@ -1,7 +1,23 @@
 import React from "react";
 import "./Header.scss";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const Header = ({ onClickHandler }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navLinks = [
+    { label: "Ассортимент", path: "/" },
+    { label: "Отзывы", path: "/reviews" },
+    { label: "О бренде", path: "/about" },
+    { label: "Редактор", path: "/creator" },
+    { label: "Профиль", path: "/profile" },
+  ];
+
+  const isActive = (path) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
   return (
     <div className="header-container">
       <div className="logo">
@@ -24,11 +40,15 @@ export const Header = ({ onClickHandler }) => {
       </div>
 
       <nav className="nav-links">
-        <button className="nav-link">Главная</button>
-        <button className="nav-link active">Ассортимент</button>
-        <button className="nav-link">Отзывы</button>
-        <button className="nav-link">О бренде</button>
-        <button className="nav-link">Редактор</button>
+        {navLinks.map((link) => (
+          <button
+            key={link.path}
+            className={`nav-link ${isActive(link.path) ? "active" : ""}`}
+            onClick={() => navigate(link.path)}
+          >
+            {link.label}
+          </button>
+        ))}
       </nav>
 
       <button className="login-button" onClick={() => onClickHandler()}>

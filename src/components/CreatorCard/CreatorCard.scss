@@ -1,0 +1,69 @@
+.creator-card {
+  background: #1c1c24;
+  border-radius: 16px;
+  padding: 1rem;
+  transition: border 0.3s;
+  border: 2px solid transparent;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #3fa4ff;
+  }
+
+  .creator-image {
+    max-width: 371px;
+    height: 330px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .creator-info {
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        font-size: 24.15px;
+      }
+
+      .badge {
+        background: #684bff;
+        padding: 0.2rem 0.5rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        color: white;
+      }
+    }
+
+    .author-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      font-weight: 400;
+      font-size: 16px;
+
+      .avatar-small {
+        width: 27px;
+        height: 27px;
+        border-radius: 50%;
+      }
+    }
+
+    .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+
+      .address {
+        display: flex;
+        align-items: center;
+      }
+    }
+  }
+}
