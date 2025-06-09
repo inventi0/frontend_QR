@@ -1,7 +1,7 @@
 import React from "react";
 import "./MainBanner.scss";
 
-export const MainBanner = () => {
+export const MainBanner = ({ onClickHandler }) => {
   return (
     <div className="scan-and-style-container">
       <div className="text-block">
@@ -12,9 +12,8 @@ export const MainBanner = () => {
         </h1>
       </div>
       <div className="buttons">
-        <button className="btn-primary">КУПИТЬ</button>
-        <button className="btn-primary" style={{ backgroundColor: " #444" }}>
-          ПРЕДЗАКАЗ
+        <button className="btn-primary" onClick={() => onClickHandler()}>
+          КУПИТЬ
         </button>
       </div>
     </div>
