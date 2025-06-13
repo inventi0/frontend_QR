@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CustomInput from "../UI/CustomInput";
+import PaymentCardForm from "../PaymentCardForm/PaymentCardForm";
 import "./order.scss";
 
 export const OrderForm = ({ selected, isPreorder }) => {
@@ -113,48 +114,7 @@ export const OrderForm = ({ selected, isPreorder }) => {
 
       <div className="section payment-block">
         <h3>Способ оплаты</h3>
-        <div className="cardWrapper">
-          <div className="cardHeader">Банковская карта</div>
-          <CustomInput
-            name="cardNumber"
-            value={form.cardNumber}
-            onChange={handleChange}
-            placeholder="Card Number"
-            className="custom-input"
-          />
-          <div className="inline">
-            <CustomInput
-              name="expiration"
-              value={form.expiration}
-              onChange={handleChange}
-              placeholder="Expiration Date"
-              className="custom-input"
-            />
-            <CustomInput
-              name="cvc"
-              value={form.cvc}
-              onChange={handleChange}
-              placeholder="Security Code"
-              className="custom-input"
-            />
-          </div>
-          <CustomInput
-            name="cardName"
-            value={form.cardName}
-            onChange={handleChange}
-            placeholder="Card Holder Name"
-            className="custom-input"
-          />
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              name="saveCard"
-              checked={form.saveCard}
-              onChange={handleChange}
-            />
-            Сохранить данные карты
-          </label>
-        </div>
+        <PaymentCardForm form={form} handleChange={handleChange} />
       </div>
 
       <div className="submit-line">
