@@ -1,95 +1,30 @@
-.payment-card-form {
-  background: #f8f8f8;
-  padding: 16px;
-  border-radius: 12px;
+.cardWrapper {
   border: 1px solid #ccc;
-  position: relative;
-  color: black;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fafafa;
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 500;
-    cursor: pointer;
-    margin-bottom: 12px;
-
-    .logo-dropdown {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      img {
-        height: 24px;
-      }
-
-      .arrow {
-        font-size: 12px;
-        transition: transform 0.3s ease;
-        &.open {
-          transform: rotate(180deg);
-        }
-      }
-    }
+  .cardHeader {
+    font-weight: bold;
+    margin-bottom: 10px;
   }
 
-  .card-dropdown {
-    position: absolute;
-    top: 50px;
-    right: 10px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 8px 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-
-    .card-option {
-      padding: 8px 16px;
-      cursor: pointer;
-      &:hover {
-        background: #f2f2f2;
-      }
-    }
-  }
-
-  .card-fields {
+  .inline {
     display: flex;
-    flex-direction: column;
     gap: 10px;
+  }
 
-    .inline {
-      display: flex;
-      gap: 10px;
+  .field {
+    margin-bottom: 15px;
 
-      .custom-input {
-        flex: 1;
-      }
+    .error-text {
+      color: red;
+      font-size: 12px;
+      margin-top: 5px;
     }
 
-    .input-with-icon {
-      position: relative;
-
-      .lock-icon {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 16px;
-        height: 16px;
-      }
-    }
-
-    .checkbox {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-
-      input {
-        width: 18px;
-        height: 18px;
-      }
+    input.error {
+      border-color: red;
     }
   }
 }
