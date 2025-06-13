@@ -1,0 +1,121 @@
+.footer {
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #f3f3f3, #eaeaea);
+  margin-top: 50px;
+  border-radius: 20px;
+  padding: 40px;
+  gap: 40px;
+  flex-wrap: wrap;
+
+  &__form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    input,
+    textarea {
+      background-color: transparent;
+      padding: 14px 20px;
+      border-radius: 20px;
+      border: 1px solid #3a3a3b;
+      font-family: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: none;
+    }
+
+    button {
+      padding: 12px 0;
+      background-color: #2f48ff;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+
+      &:hover {
+        background-color: #1f36e0;
+      }
+    }
+  }
+
+  &__faq {
+    flex: 1;
+
+    h2 {
+      color: #5555ff;
+      font-weight: bold;
+      font-size: 34.83px;
+      margin-bottom: 20px;
+    }
+
+    .faq-item {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+
+      .faq-question {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-weight: bold;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #2f48ff;
+        }
+
+        .arrow {
+          transition: transform 0.3s ease;
+        }
+
+        .arrow.rotated {
+          transform: rotate(180deg);
+        }
+      }
+
+      .faq-answer {
+        margin-top: 8px;
+        font-size: 19.35px;
+        color: #4a4a4a;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease, opacity 0.4s ease;
+        opacity: 0;
+      }
+
+      &.open {
+        .faq-answer {
+          max-height: 200px;
+          opacity: 1;
+        }
+      }
+    }
+
+    .footer__contacts {
+      margin-top: 25px;
+
+      h3 {
+        color: #5555ff;
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      a,
+      p {
+        display: block;
+        font-size: 19.35px;
+        line-height: 105%;
+        color: grey;
+        margin-bottom: 20px;
+      }
+    }
+  }
+}

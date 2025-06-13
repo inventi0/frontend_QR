@@ -7,7 +7,8 @@ export const Header = ({ onClickHandler }) => {
   const location = useLocation();
 
   const navLinks = [
-    { label: "Ассортимент", path: "/" },
+    { label: "Главная", path: "/" },
+    { label: "Ассортимент", path: "/range" },
     { label: "Отзывы", path: "/reviews" },
     { label: "О бренде", path: "/about" },
     { label: "Редактор", path: "/creator" },

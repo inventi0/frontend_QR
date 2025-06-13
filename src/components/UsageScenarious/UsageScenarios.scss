@@ -1,0 +1,62 @@
+.usage-scenarios {
+  margin-top: 50px;
+  color: white;
+
+  &__title {
+    display: block;
+    font-size: 64px;
+    margin-bottom: 120px;
+    text-transform: uppercase;
+    font-family: "Bicubik";
+  }
+
+  &__columns {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  &__column {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+}
+
+.usage-card {
+  background: #1a1a1a;
+  border-radius: 20px;
+  max-width: 600px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    transform: scale(1.03);
+  }
+
+  &__content {
+    h3 {
+      font-size: 40px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 20px;
+      line-height: 1.4;
+      color: #ccc;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    border-radius: 10px;
+    object-fit: contain;
+    margin-top: 10px;
+  }
+}
