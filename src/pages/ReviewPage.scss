@@ -1,0 +1,91 @@
+// src/pages/ReviewPage.scss
+.reviews-page {
+  padding: 80px 20px 0;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(180deg, #000000, #0a0a0a);
+}
+
+.reviews-title {
+  text-align: center;
+  font-size: 36px;
+  color: white;
+  margin-bottom: 60px;
+  font-weight: 500;
+}
+
+.reviews-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+  gap: 30px;
+  justify-items: center;
+  position: relative;
+}
+
+.review-card {
+  background-color: #232323;
+  color: white;
+  width: 390px;
+  border-radius: 26px;
+  padding: 30px 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.review-card .stars {
+  font-size: 24px;
+  color: #FCCF04;
+}
+
+.star-filled {
+  color: #FCCF04;
+}
+
+.star-empty {
+  color: #5a5a5a;
+}
+
+.review-card .text {
+  font-size: 16px;
+  line-height: 1.5;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.review-card .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.review-card .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: #5555FF;
+  flex-shrink: 0;
+}
+
+/* Размеры карточек */
+.review-card.default {
+  aspect-ratio: 390/351;
+}
+
+.review-card.wide {
+  aspect-ratio: 390/175;
+  width: 838px;
+}
+
+.review-card.tall {
+  aspect-ratio: 390/526;
+}

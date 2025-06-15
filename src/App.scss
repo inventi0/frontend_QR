@@ -4,7 +4,7 @@
   padding: 20px;
 }
 
-.range {
+.range { 
   &__text {
     color: white;
     margin-top: 10px;
@@ -34,4 +34,39 @@
     margin-top: 2rem;
     flex-wrap: wrap;
   }
+}
+
+
+// Добавьте в глобальные стили
+.gradient-overlay {
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(0,0,0,1), transparent);
+  z-index: 1;
+}
+
+.view-all-button {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #5555FF;
+  color: white;
+  padding: 16px 32px;
+  border-radius: 25px;
+  border: none;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(85, 85, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.view-all-button:hover {
+  background-color: #4A4AFF;
+  transform: translateX(-50%) scale(1.05);
 }
