@@ -1,0 +1,62 @@
+.product-card {
+  background: #1A1A1A;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-title-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #23242580;
+  padding: 8px 12px;
+  border-radius: 26px;
+  z-index: 1;
+  width: 330px;
+  height: 64px;
+}
+
+.product-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.product-description {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* Позиционирование карточек */
+.top-left {
+  grid-area: top-left;
+}
+
+.bottom-left {
+  grid-area: bottom-left;
+}
+
+.top-right {
+  grid-area: top-right;
+}
+
+.bottom-right {
+  grid-area: bottom-right;
+}
