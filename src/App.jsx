@@ -10,6 +10,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { AboutPage } from "./pages/AboutPage";
 import { CreatorPage } from "./pages/CreatorPage";
+import "./pages/CreatorPage.module.scss";
 import { Footer } from "./components/Footer/Footer";
 import { AssortmentPage } from "./pages/AssortmentPage";
 

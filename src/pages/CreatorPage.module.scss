@@ -1,0 +1,49 @@
+/* src/App.module.css */
+.appContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-height: 100vh; /* Prevent expanding beyond viewport */
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden; /* Prevent body scrollbars */
+  }
+
+  .mainContent {
+    flex-grow: 1; /* Take remaining vertical space */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+    overflow: hidden; /* Prevent this section from overflowing */
+    min-height: 0; /* Important for flex children in overflow container */
+  }
+
+  .canvasContainer {
+    flex-grow: 1; /* Allow canvas container to take remaining space */
+    display: flex; /* Use flex to help child fill space */
+    position: relative;
+    min-height: 200px; /* Keep minimum height */
+    overflow: hidden; /* Clip anything overflowing */
+    border: 1px solid var(--canvas-border-color);
+    border-radius: 5px;
+    background-color: var(--canvas-background); /* Set container background */
+  }
+
+  /* Responsive adjustments */
+  @media (min-width: 768px) {
+    .mainContent {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+     .mainContent {
+         padding: 0.5rem;
+         gap: 0.5rem;
+     }
+  }
+
+  /* Created by Ram Bapat, www.linkedin.com/in/ram-bapat-barrsum-diamos */
