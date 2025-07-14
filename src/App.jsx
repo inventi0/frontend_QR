@@ -1,5 +1,6 @@
-import { useState } from "react";
-import "./App.scss";
+import React, { useState } from "react";
+import "./App.scss"; // Основные стили приложения
+import "./pages/AssortmentPage.scss"; // Дополнительные стили для страницы Ассортимент
 import { Modal } from "./components/Modal/Modal";
 import { Login } from "./components/Login/Login";
 import { Header } from "./components/Header/Header";
@@ -9,7 +10,9 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { AboutPage } from "./pages/AboutPage";
 import { CreatorPage } from "./pages/CreatorPage";
+import "./pages/CreatorPage.module.scss";
 import { Footer } from "./components/Footer/Footer";
+import { AssortmentPage } from "./pages/AssortmentPage";
 
 function App() {
   const [modalActive, setModalActive] = useState(false);
@@ -24,6 +27,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/reviews" element={<ReviewPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/range" element={<AssortmentPage />} />
         </Routes>
         <Footer />
         <Modal active={modalActive} setActive={setModalActive}>

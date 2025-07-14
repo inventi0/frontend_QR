@@ -1,0 +1,38 @@
+.assortment-page {
+  padding: 80px 20px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #000000, #0a0a0a);
+}
+
+.assortment-title {
+  text-align: center;
+  font-size: 36px;
+  color: white;
+  margin-bottom: 60px;
+  font-weight: 500;
+}
+
+.assortment-gallery {
+  display: flex;
+  gap: 30px;
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  flex: 1;
+}
+
+/* Пример индивидуального управления выравниванием */
+.left-column {
+  align-items: flex-start;
+}
+
+.right-column {
+  align-items: flex-end;
+}
