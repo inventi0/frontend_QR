@@ -1,0 +1,229 @@
+/* src/components/Toolbar.module.css */
+.toolbar {
+    background-color: #6366f1;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-wrap: wrap; /* Allow sections to wrap */
+    gap: 1rem .8rem; /* Row and column gap */
+    align-items: center;
+    justify-content: center; /* Center items by default */
+    border: 1px solid var(--border-color);
+    width: 100%; /* Take full width */
+  }
+  
+  .toolSection {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap; /* Prevent wrapping within a single section */
+    overflow-x: auto; /* Allow horizontal scroll if needed */
+    padding: 0.3rem 0.1rem; /* Padding for scroll visibility */
+    scrollbar-width: thin; /* Firefox scrollbar */
+    scrollbar-color: var(--border-color) transparent; /* Firefox scrollbar */
+    
+  }
+  /* Webkit scrollbar */
+  .toolSection::-webkit-scrollbar { height: 5px; }
+  .toolSection::-webkit-scrollbar-track { background: transparent; }
+  .toolSection::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+  
+  
+  .sectionTitle {
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    white-space: nowrap;
+  }
+  
+  /* Buttons (Tools, Actions) */
+  .toolButton, .actionButton {
+    background-color: var(--button-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 0.5rem;
+    font-size: 1.1rem; /* Icon size */
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap; /* Prevent text wrap */
+  }
+  .toolButton:active, .actionButton:active {
+      transform: scale(0.95); /* Click effect */
+  }
+  
+  .toolButton:hover, .actionButton:hover {
+    background-color: var(--button-hover-background);
+    border-color: var(--primary-accent);
+  }
+  
+  .toolButton.active {
+    background-color: var(--primary-accent);
+    color: #fff;
+    border-color: var(--primary-accent);
+  }
+  
+  .toolButton.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: var(--button-background); /* Reset background */
+    border-color: var(--border-color); /* Reset border */
+  }
+  .toolButton.disabled:hover {
+     background-color: var(--button-background); /* Prevent hover effect */
+     border-color: var(--border-color);
+  }
+  
+  
+  /* Color Input & Palette */
+  .colorInput {
+    width: 35px;
+    height: 30px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+    background-color: var(--button-background);
+    overflow: hidden; /* Hide default UI elements */
+  }
+  /* Style the color picker indicator */
+  .colorInput::-webkit-color-swatch-wrapper { padding: 0; }
+  .colorInput::-webkit-color-swatch { border: none; border-radius: 3px; width: 100%; height: 100%; }
+  .colorInput::-moz-color-swatch { border: none; border-radius: 3px; width: 100%; height: 100%; }
+  
+  .colorPalette {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+  }
+  
+  .colorButton {
+    width: 25px;
+    height: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%; /* Circle */
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 3px rgba(0,0,0,0.2);
+    flex-shrink: 0; /* Prevent shrinking */
+  }
+  
+  .colorButton:hover {
+    transform: scale(1.1);
+    border-color: var(--text-color);
+  }
+  
+  .colorButton.activeColor {
+    border: 2px solid var(--primary-accent);
+    transform: scale(1.15);
+    box-shadow: 0 0 5px var(--primary-accent);
+  }
+  
+  /* Line Width Slider */
+  .lineWidthSlider {
+    cursor: pointer;
+    width: 100px;
+    height: 10px;
+    accent-color: var(--primary-accent);
+    background: var(--button-background); /* Track background */
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    padding: 0; /* Remove default padding */
+    margin: 0 5px;
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+  }
+  /* Thumb styles */
+  .lineWidthSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--toolbar-background);
+  }
+  .lineWidthSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--toolbar-background);
+  }
+  
+  
+  .lineWidthValue {
+    font-size: 0.8rem;
+    min-width: 35px; /* Prevent layout shifts */
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums; /* Keep numbers aligned */
+  }
+  
+  .buttonText {
+     font-size: 0.8rem;
+     display: none; /* Hide text by default */
+  }
+  
+  .actionsSection {
+    margin-left: auto; /* Push actions to the right on wider screens */
+  }
+  
+  
+  /* Responsive Adjustments */
+  @media (max-width: 900px) {
+    .toolbar {
+      justify-content: flex-start; /* Align sections to start */
+      gap: 0.8rem;
+    }
+    .actionsSection {
+       margin-left: 0; /* Don't push right */
+    }
+  }
+  
+  @media (max-width: 700px) {
+    .toolbar {
+       gap: 0.5rem;
+       padding: 0.5rem;
+    }
+    .toolSection {
+      gap: 0.4rem;
+      padding: 0.2rem 0;
+    }
+    .sectionTitle {
+      font-size: 0.7rem;
+      margin-right: 0.3rem;
+    }
+    .toolButton, .actionButton {
+       padding: 0.4rem;
+       font-size: 1rem;
+    }
+    .colorInput { width: 30px; height: 25px; }
+    .colorButton { width: 22px; height: 22px; }
+    .lineWidthSlider { width: 70px; height: 8px; }
+    .lineWidthSlider::-webkit-slider-thumb { width: 16px; height: 16px; }
+    .lineWidthSlider::-moz-range-thumb { width: 14px; height: 14px; }
+    .lineWidthValue { font-size: 0.7rem; min-width: 30px;}
+    .actionsSection .sectionTitle { display: none; } /* Hide 'Actions' title */
+  }
+  
+  /* Show button text on wider screens */
+  @media (min-width: 800px) {
+     .buttonText {
+        display: inline;
+     }
+     .actionButton {
+       padding: 0.5rem 0.8rem;
+     }
+  }
+
+  /* Created by Ram Bapat, www.linkedin.com/in/ram-bapat-barrsum-diamos */

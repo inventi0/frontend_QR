@@ -1,0 +1,36 @@
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+    font-family: "Bicubik", sans-serif;
+  }
+  
+  .custom-select {
+    appearance: none;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 2px solid #5e5eff;
+    background: #0a0a0a;
+    color: white;
+    font-size: 16px;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 1px;
+  
+    option {
+      background-color: #0a0a0a;
+      color: white;
+    }
+  }
+  
+  .custom-arrow {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #5e5eff;
+    font-size: 14px;
+  }
+  
