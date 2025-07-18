@@ -12,7 +12,6 @@ const leftColumnProducts = [
     title: 'Футболка',
     image: tshirt,
     description: 'Сидят, хорошо им наверное',
-    width: 619.35,
     height: 619.35,
   },
   {
@@ -20,7 +19,6 @@ const leftColumnProducts = [
     title: 'Шорты',
     image: shorts,
     description: 'Стоят, хорошо им наверное',
-    width: 619.35,
     height: 937,
   }
 ];
@@ -31,7 +29,6 @@ const rightColumnProducts = [
     title: 'Худи',
     image: hoodie,
     description: 'Стоят, хорошо им наверное',
-    width: 619.35,
     height: 937,
   },
   {
@@ -39,7 +36,6 @@ const rightColumnProducts = [
     title: 'Кепки',
     image: caps,
     description: 'Сидят, хорошо им наверное',
-    width: 619.35,
     height: 619.35,
   }
 ];

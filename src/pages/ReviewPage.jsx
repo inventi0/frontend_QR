@@ -29,7 +29,7 @@ export const ReviewPage = () => {
 
   const scrollToBottom = () => {
     window.scrollTo({
-      top: document.documentElement.scrollHeight,
+      top: containerRef.current.scrollHeight - 300,
       behavior: 'smooth'
     });
   };

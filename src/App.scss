@@ -4,7 +4,7 @@
   padding: 20px;
 }
 
-.range { 
+.range {
   &__text {
     color: white;
     margin-top: 10px;
@@ -24,7 +24,6 @@
   background-repeat: no-repeat;
   background-position: center top;
   background-size: cover;
-  height: 100vh;
   padding: 2rem;
   color: white;
 
@@ -36,15 +35,12 @@
   }
 }
 
-
-// Добавьте в глобальные стили
 .gradient-overlay {
   position: absolute;
   bottom: 120px;
   left: 0;
   right: 0;
-  height: 100px;
-  background: linear-gradient(to top, rgba(0,0,0,1), transparent);
+  background: linear-gradient(180deg, #000000, #0a0a0a);
   z-index: 1;
 }
 
@@ -53,7 +49,7 @@
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #5555FF;
+  background-color: #5555ff;
   color: white;
   padding: 16px 32px;
   border-radius: 25px;
@@ -67,6 +63,6 @@
 }
 
 .view-all-button:hover {
-  background-color: #4A4AFF;
+  background-color: #4a4aff;
   transform: translateX(-50%) scale(1.05);
 }
