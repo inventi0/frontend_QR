@@ -1,4 +1,3 @@
-/* src/App.module.css */
 .appContainer {
     display: flex;
     flex-direction: column;
@@ -10,12 +9,12 @@
 
   .mainContent {
     margin-top: 30px;
-    flex-grow: 1; /* Take remaining vertical space */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    overflow: hidden; /* Prevent this section from overflowing */
-    min-height: 0; /* Important for flex children in overflow container */
+    overflow: hidden;
+    min-height: 0; 
   }
 
   .canvasContainer {
@@ -23,8 +22,7 @@
     flex-grow: 1; /* Allow canvas container to take remaining space */
     display: flex; /* Use flex to help child fill space */
     position: relative;
-    min-height: 200px; /* Keep minimum height */
-    overflow: hidden; /* Clip anything overflowing */
+    overflow: hidden;
     border: 1px solid var(--canvas-border-color);
     border-radius: 5px;
     background-color: var(--canvas-background); /* Set container background */

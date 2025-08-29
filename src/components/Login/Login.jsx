@@ -40,7 +40,7 @@ export const Login = ({ onClickHandler }) => {
             {showPassword ? <EyePasswordHide /> : <EyePasswordShow />}
           </span>
         </div>
-        <button className="login-button">LOGIN</button>
+        <button className="login-button__modal">LOGIN</button>
 
         <div className="login-footer">
           <span className="login-link">Забыл пароль?</span>

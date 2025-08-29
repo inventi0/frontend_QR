@@ -12,7 +12,6 @@ export const ReviewPage = () => {
   return (
     <div
       className="reviews-page"
-      style={{ backgroundImage: `url(${backProfile})`, backgroundRepeat: "no-repeat"}}
     >
       <h1 className="reviews-title">Отзывы Пользователей</h1>
 

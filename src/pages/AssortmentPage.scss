@@ -1,5 +1,10 @@
 .assortment-page {
   background: linear-gradient(180deg, #000000, #0a0a0a);
+  padding-bottom: 30px;
+
+  @media (max-width: 800px) {
+    padding-bottom: 0px;
+  }
 }
 
 .assortment-title {
@@ -16,6 +21,10 @@
   gap: 30px;
   width: 100%;
   margin: 0 auto;
+
+  @media (max-width: 800px) {
+    display: block;
+  }
 }
 
 .left-column,
@@ -24,6 +33,10 @@
   flex-direction: column;
   gap: 30px;
   flex: 1;
+
+  @media (max-width: 800px) {
+    margin-bottom: 30px;
+  }
 }
 
 .left-column {

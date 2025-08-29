@@ -1,6 +1,5 @@
+/* ReviewPage.scss */
 .reviews-page {
-  position: relative;
-  background: linear-gradient(180deg, #000000, #0a0a0a);
   padding-bottom: 20px;
 }
 
@@ -8,31 +7,39 @@
   text-align: center;
   font-size: 36px;
   color: white;
-  margin-top: 30px;
-  margin-bottom: 30px;
+  margin: 30px 0;
   font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 28px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 22px;
+  }
 }
 
 .reviews-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 30px;
   justify-items: center;
   position: relative;
-}
 
-.review-card.wide {
-  aspect-ratio: 390/175;
-  width: 100%;
-}
+  @media (max-width: 1280px) {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
 
-.review-card.tall {
-  aspect-ratio: 390/526;
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 }
 
 .view-all-button {
   display: block;
-  margin: 40px auto 0 auto;
+  margin: 40px auto 0;
   padding: 14px 32px;
   font-size: 18px;
   font-weight: 500;
@@ -45,5 +52,11 @@
 
   &:hover {
     background: #3a3af0;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
   }
 }

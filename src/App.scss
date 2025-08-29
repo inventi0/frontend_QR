@@ -47,4 +47,10 @@
     margin-top: 2rem;
     flex-wrap: wrap;
   }
+
+  @media (max-width: 1280px) {
+    &__list {
+      justify-content: center;
+    }
+  }
 }

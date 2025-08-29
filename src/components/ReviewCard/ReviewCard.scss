@@ -1,61 +1,76 @@
-/* src/components/ReviewCard/ReviewCard.css */
 .review-card {
   background-color: #232323;
   color: white;
-  width: 390px;
-  height: 351px;
+  width: 100%;
+  min-height: 280px;
   border-radius: 26px;
-  padding: 30px 25px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  .stars {
+    font-size: 20px;
+  }
+
+  .text {
+    font-size: 16px;
+    line-height: 1.5;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      background-color: #5555ff;
+      flex-shrink: 0;
+    }
+  }
+
+  &.default {
+    grid-column: span 1;
+  }
+
+  &.wide {
+    grid-column: span 2;
+  }
+
+  &.tall {
+    grid-row: span 2;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    .stars {
+      font-size: 18px;
+    }
+    .text {
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 16px;
+    padding: 14px;
+    .text {
+      font-size: 13px;
+    }
+  }
 }
 
-.review-card .stars {
-  font-size: 24px;
-}
-
-.review-card .text {
-  font-size: 16px;
-  line-height: 1.5;
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.review-card .user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.review-card .avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-size: cover;
-  background-position: center;
-  background-color: #5555FF;
-  flex-shrink: 0;
-}
-
-/* Размеры карточек */
-.review-card.default {
-  grid-column: span 1;
-}
-
-.review-card.wide {
-  grid-column: span 2;
-}
-
-.review-card.tall {
-  grid-row: span 2;
-}
-
-// src/components/ReviewCard/ReviewCard.scss
 .star-filled {
-  color: #FCCF04;
+  color: #fccf04;
 }
 
 .star-empty {

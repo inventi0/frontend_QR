@@ -1,13 +1,21 @@
 .product-card {
-  background: #1A1A1A;
+  background: #1a1a1a;
   border-radius: 26px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   position: relative;
   transition: transform 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-5px);
+  }
+
+  @media (max-width: 800px) {
+    width: 100%;
+
+    &:hover {
+      transform: translateY(0px);
+    }
   }
 }
 
@@ -44,7 +52,6 @@
   margin-top: 5px;
 }
 
-/* Позиционирование карточек */
 .top-left {
   grid-area: top-left;
 }

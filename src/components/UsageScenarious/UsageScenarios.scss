@@ -5,7 +5,7 @@
   &__title {
     display: block;
     font-size: 64px;
-    margin-bottom: 120px;
+    margin-bottom: 50px;
     text-transform: uppercase;
     font-family: "Bicubik";
   }
@@ -22,6 +22,33 @@
     flex-direction: column;
     gap: 30px;
   }
+
+  @media (max-width: 800px) {
+    &__title {
+      font-size: 48px;
+    }
+
+    &__columns {
+      display: block;
+    }
+
+    &__column {
+      margin-bottom: 30px;
+    }
+  }
+
+  @media (max-width: 568px) {
+    &__title {
+      font-size: 36px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    &__title {
+      font-size: 24px;
+      margin-bottom: 25px;
+    }
+  }
 }
 
 .usage-card {
@@ -34,6 +61,7 @@
   justify-content: space-between;
   transition: transform 0.3s ease;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transform: rotate(-6deg);
 
   &:hover {
     transform: scale(1.03);
@@ -58,5 +86,29 @@
     border-radius: 10px;
     object-fit: contain;
     margin-top: 10px;
+  }
+
+  @media (max-width: 1280px) {
+    transform: rotate(0deg);
+  }
+
+  @media (max-width: 800px) {
+    max-width: 100%;
+
+    &:hover {
+      transform: scale(1);
+    }
+  }
+
+  @media (max-width: 568px) {
+    &__content {
+      h3 {
+        font-size: 30px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+    }
   }
 }

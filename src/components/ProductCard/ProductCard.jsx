@@ -10,7 +10,6 @@ export const ProductCard = ({ title, image, description, width, height, position
     <div className={`product-card ${position}`} style={style}>
       <img src={image} alt={title} className="product-image" />
       
-      {/* Полупрозрачная плашка с названием */}
       <div className="product-title-overlay">
         <div className="product-title">
           <span>{title}</span>

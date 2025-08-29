@@ -31,4 +31,9 @@
       transform: translateY(0px);
     }
   }
+
+  @media (max-width: 800px) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }
