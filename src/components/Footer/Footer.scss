@@ -117,4 +117,10 @@
       }
     }
   }
+
+
+  @media (max-width: 800px) {
+    flex-direction: column;
+    padding: 20px;
+  }
 }

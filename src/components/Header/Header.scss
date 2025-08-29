@@ -12,6 +12,10 @@
 .nav-links {
   display: flex;
   gap: 20px;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
 }
 
 .nav-link {
@@ -44,5 +48,22 @@
 
   &:hover {
     background-color: #6366f1;
+  }
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+.burger-button {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+
+  @media (max-width: 1024px) {
+    display: block;
   }
 }
