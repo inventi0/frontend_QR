@@ -1,3 +1,5 @@
+import s from "./CustomInput.module.scss";
+
 export default function CustomInput({
   name,
   value,
@@ -5,19 +7,20 @@ export default function CustomInput({
   onBlur,
   placeholder,
   error,
+  type = "text",
 }) {
   return (
-    <div className={`input-wrapper ${error ? "has-error" : ""}`}>
+    <div className={s.input}>
       <input
         name={name}
-        type="text"
+        type={type}
         value={value}
         onChange={onChange}
         onBlur={onBlur}
         placeholder={placeholder}
-        className="custom-input"
+        className={`${s.input__main} ${error ? s.input__main__error : ""}`}
       />
-      {error && <div className="error-text">{error}</div>}
+      {error && <div className={s.input__main__error__text}>{error}</div>}
     </div>
   );
 }

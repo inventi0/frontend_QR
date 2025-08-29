@@ -10,7 +10,7 @@ export const Header = ({ onClickHandler }) => {
     { label: "Главная", path: "/" },
     { label: "Ассортимент", path: "/range" },
     { label: "Отзывы", path: "/reviews" },
-    { label: "О бренде", path: "/about" },
+    // { label: "О бренде", path: "/about" },
     { label: "Редактор", path: "/creator" },
     { label: "Профиль", path: "/profile" },
   ];

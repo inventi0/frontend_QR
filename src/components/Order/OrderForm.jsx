@@ -1,7 +1,6 @@
 import { useForm, FormProvider } from "react-hook-form";
-import { IMaskInput } from "react-imask";
-import CustomInput from "../UI/CustomInput";
-// import PaymentCardForm from "../PaymentCardForm/PaymentCardForm";
+import CustomInput from "../UI/CustomInput/CustomInput";
+import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
 import "./order.scss";
 
 export const OrderForm = ({ selected, isPreorder }) => {
@@ -16,11 +15,6 @@ export const OrderForm = ({ selected, isPreorder }) => {
       city: "",
       postal: "",
       saveAddress: false,
-      cardNumber: "",
-      expiration: "",
-      cvc: "",
-      cardName: "",
-      saveCard: false,
     },
   });
 
@@ -44,8 +38,8 @@ export const OrderForm = ({ selected, isPreorder }) => {
         <div className="summary">
           <img src={selected.tshirtImage} alt="Выбранная футболка" />
           <div>
-            <p>Размер: {selected.size}</p>
-            <p>Принт: {selected.print}</p>
+            <span>Размер: {selected.size}</span>
+            <span>Принт: {selected.print}</span>
           </div>
         </div>
 
@@ -53,39 +47,53 @@ export const OrderForm = ({ selected, isPreorder }) => {
           <h3>Контакт</h3>
           <CustomInput
             placeholder="Номер телефона или Email"
+            error={errors.contact?.message}
             {...register("contact", { required: "Обязательное поле" })}
           />
-          {errors.contact && <span className="error-text">{errors.contact.message}</span>}
         </div>
 
         <div className="section">
           <h3>Доставка</h3>
           <CustomInput
             placeholder="Страна или регион"
+            error={errors.country?.message}
             {...register("country", { required: "Обязательное поле" })}
           />
           <div className="inline">
-            <CustomInput placeholder="Имя" {...register("firstName", { required: "Обязательное поле" })} />
-            <CustomInput placeholder="Фамилия" {...register("lastName", { required: "Обязательное поле" })} />
+            <CustomInput
+              placeholder="Имя"
+              error={errors.firstName?.message}
+              {...register("firstName", { required: "Обязательное поле" })}
+            />
+            <CustomInput
+              placeholder="Фамилия"
+              error={errors.lastName?.message}
+              {...register("lastName", { required: "Обязательное поле" })}
+            />
           </div>
-          <CustomInput placeholder="Адрес доставки" {...register("address", { required: "Обязательное поле" })} />
+          <CustomInput
+            placeholder="Адрес доставки"
+            error={errors.address?.message}
+            {...register("address", { required: "Обязательное поле" })}
+          />
           <div className="inline">
-            <CustomInput placeholder="Город" {...register("city", { required: "Обязательное поле" })} />
-            <IMaskInput
-              className="custom-input"
-              mask={"000000"}
+            <CustomInput
+              placeholder="Город"
+              error={errors.city?.message}
+              {...register("city", { required: "Обязательное поле" })}
+            />
+            <CustomInput
               placeholder="Индекс"
+              error={errors.postal?.message}
               {...register("postal", { required: "Обязательное поле" })}
             />
           </div>
-          <label className="checkbox">
-            <input type="checkbox" {...register("saveAddress")} /> Сохранить данные о доставке
-          </label>
-        </div>
 
-        <div className="section payment-block">
-          <h3>Способ оплаты</h3>
-          {/* <PaymentCardForm /> */}
+          <CustomCheckbox
+            label="Сохранить данные о доставке"
+            id="saveAddress"
+            {...register("saveAddress")}
+          />
         </div>
 
         <div className="submit-line">
