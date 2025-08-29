@@ -1,4 +1,3 @@
-// src/components/ReviewCard/ReviewCard.jsx
 import React from 'react';
 import './ReviewCard.scss';
 

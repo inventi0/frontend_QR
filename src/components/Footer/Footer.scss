@@ -2,7 +2,6 @@
   display: flex;
   justify-content: space-between;
   background: linear-gradient(90deg, #f3f3f3, #eaeaea);
-  margin-top: 50px;
   border-radius: 20px;
   padding: 40px;
   gap: 40px;
@@ -110,7 +109,7 @@
 
       a,
       p {
-        display: block;
+        display: flex;
         font-size: 19.35px;
         line-height: 105%;
         color: grey;

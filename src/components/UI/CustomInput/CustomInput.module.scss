@@ -1,0 +1,21 @@
+.input {
+  margin-bottom: 10px;
+  &__main {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid white;
+    background: transparent;
+    font-size: 16px;
+    color: white;
+    outline: none;
+
+    &__error {
+      border-color: red;
+
+      &__text {
+        color: red;
+      }
+    }
+  }
+}

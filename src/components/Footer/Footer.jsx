@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import "./Footer.scss";
 import { faqData } from "../../utils/data";
+import Phone from "../icons/Phone";
+import Home from "../icons/Home";
+import Mail from "../icons/Mail";
 export const Footer = () => {
   const [openIndex, setOpenIndex] = useState(null);
 
@@ -68,11 +71,16 @@ export const Footer = () => {
             выйти на связь — заполните контактную форму или выберите удобный для
             вас способ связи
           </p>
-          <a href="tel:79879458456">📞 +7(987)-945-84-56</a>
-          <a href="https://yandex.ru/maps/geo/moskva/53000094/?ll=37.385272%2C55.584227&z=9.52">
-            📍 г. Москва
+          <a href="tel:79879458456">
+            <Phone /> +7(987)-945-84-56
           </a>
-          <a href="mailto:Eduard_III@mail.ru">📧 Eduard_III@mail.ru</a>
+          <a href="https://yandex.ru/maps/geo/moskva/53000094/?ll=37.385272%2C55.584227&z=9.52">
+            <Home /> г. Москва
+          </a>
+          <a href="mailto:Eduard_III@mail.ru">
+            <Mail />
+            Eduard_III@mail.ru
+          </a>
         </div>
       </div>
     </div>

@@ -3,7 +3,6 @@ import './ProductCard.scss';
 
 export const ProductCard = ({ title, image, description, width, height, position }) => {
   const style = {
-    width: `${width}px`,
     height: `${height}px`
   };
 
