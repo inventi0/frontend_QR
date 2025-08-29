@@ -28,6 +28,8 @@ function App() {
           <Route path="/reviews" element={<ReviewPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/range" element={<AssortmentPage />} />
+
+          <Route path="*" element={<MainPage />} />
         </Routes>
         <Footer />
         <Modal active={modalActive} setActive={setModalActive}>
