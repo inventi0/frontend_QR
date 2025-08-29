@@ -16,11 +16,7 @@ export const MainPage = () => {
   };
 
   return (
-    <div
-      style={{
-        backgroundImage: `url(${backProfile})`,
-      }}
-    >
+    <div>
       <p className="range__text">
         <b>S&S</b> - Это не только амбициозный стартап, <br />
         но и комьюнити, стремительно набирающее обороты.

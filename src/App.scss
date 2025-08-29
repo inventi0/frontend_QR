@@ -1,22 +1,36 @@
 #root {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 10px;
+  padding: 15px;
+  background-image: url("../src/assets/backProfile.png");
 }
 
 .range {
   &__text {
     color: white;
-    margin-top: 10px;
-    padding-bottom: 15px;
-    line-height: 30.09px;
-    border-bottom: 2px solid white;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    font-size: 36px;
+    border-bottom: none;
+    text-align: center;
+    line-height: 50px;
+    padding-bottom: 0px;
   }
 
   &__banners {
     display: flex;
     justify-content: space-around;
     margin-top: 20px;
+  }
+
+  @media (max-width: 1024px) {
+    &__text {
+      text-align: left;
+      padding-bottom: 15px;
+      line-height: 30.09px;
+      border-bottom: 2px solid white;
+      font-size: 18px;
+    }
   }
 }
 
