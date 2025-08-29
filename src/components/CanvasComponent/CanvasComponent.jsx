@@ -1,8 +1,6 @@
-// src/components/CanvasComponent.jsx
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import styles from './CanvasComponent.module.scss';
 
-// --- Helper: Hex to RGBA ---
 function hexToRgba(hex) {
     if (!hex) return [0, 0, 0, 0];
     let r = 0, g = 0, b = 0, a = 255;
