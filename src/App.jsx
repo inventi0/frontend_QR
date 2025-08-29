@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import "./App.scss"; // Основные стили приложения
-import "./pages/AssortmentPage.scss"; // Дополнительные стили для страницы Ассортимент
+import "./App.scss";
+import "./pages/AssortmentPage.scss";
 import { Modal } from "./components/Modal/Modal";
 import { Login } from "./components/Login/Login";
 import { Header } from "./components/Header/Header";
