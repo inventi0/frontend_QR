@@ -4,6 +4,7 @@ import { Modal } from "../components/Modal/Modal";
 import { ShirtSelection } from "../components/Order/ShirtSelection";
 import { OrderForm } from "../components/Order/OrderForm";
 import { UsageScenarios } from "../components/UsageScenarious/UsageScenarios";
+import backProfile from "../assets/backProfile.png";
 
 export const MainPage = () => {
   const [modalActive, setModalActive] = useState(false);
@@ -15,7 +16,11 @@ export const MainPage = () => {
   };
 
   return (
-    <div>
+    <div
+      style={{
+        backgroundImage: `url(${backProfile})`,
+      }}
+    >
       <p className="range__text">
         <b>S&S</b> - Это не только амбициозный стартап, <br />
         но и комьюнити, стремительно набирающее обороты.

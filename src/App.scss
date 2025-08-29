@@ -1,7 +1,7 @@
 #root {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px;
 }
 
 .range {
@@ -24,7 +24,7 @@
   background-repeat: no-repeat;
   background-position: center top;
   background-size: cover;
-  padding: 2rem;
+  padding-bottom: 20px;
   color: white;
 
   &__list {
@@ -33,36 +33,4 @@
     margin-top: 2rem;
     flex-wrap: wrap;
   }
-}
-
-.gradient-overlay {
-  position: absolute;
-  bottom: 120px;
-  left: 0;
-  right: 0;
-  background: linear-gradient(180deg, #000000, #0a0a0a);
-  z-index: 1;
-}
-
-.view-all-button {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #5555ff;
-  color: white;
-  padding: 16px 32px;
-  border-radius: 25px;
-  border: none;
-  font-size: 18px;
-  font-weight: 500;
-  cursor: pointer;
-  z-index: 2;
-  box-shadow: 0 4px 12px rgba(85, 85, 255, 0.4);
-  transition: all 0.3s ease;
-}
-
-.view-all-button:hover {
-  background-color: #4a4aff;
-  transform: translateX(-50%) scale(1.05);
 }
