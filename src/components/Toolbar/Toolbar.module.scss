@@ -1,15 +1,17 @@
 .toolbar {
-  background-color: #6366f1;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   color: white;
-  border: 1px solid var(--border-color);
   width: 100%;
+  padding: 0.5rem 1rem;
 }
 
 .toolSection {
@@ -20,7 +22,7 @@
   overflow-x: auto;
   padding: 0.3rem 0.1rem;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: white transparent;
 }
 .toolSection::-webkit-scrollbar {
   height: 5px;

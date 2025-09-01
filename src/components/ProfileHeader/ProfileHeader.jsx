@@ -29,10 +29,10 @@ const ProfileHeader = () => {
       <div className="profile-actions">
         <button
           className="profile-id"
-          onClick={() => handleCopy("0xc0E3...B79C")}
+          onClick={() => handleCopy("1")}
         >
           <Copy />
-          {copied ? "Скопировано!" : "0xc0E3...B79C"}
+          {copied ? "Скопировано!" : "1"}
         </button>
       </div>
     </div>

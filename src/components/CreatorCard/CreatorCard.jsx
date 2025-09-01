@@ -43,9 +43,9 @@ const CreatorPage = () => {
             <EyePasswordShow color="white" />{" "}
             <span style={{ marginLeft: 7 }}>284</span>
           </span>
-          <span className="address" onClick={() => handleCopy("0xc0E3...B79C")}>
+          <span className="address" onClick={() => handleCopy("1")}>
             <Copy />
-            {copied ? "Скопировано!" : "0xc0E3...B79C"}
+            {copied ? "Скопировано!" : "1"}
           </span>
         </div>
       </div>
