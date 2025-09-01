@@ -5,7 +5,8 @@ import "./order.scss";
 
 export const OrderForm = ({ selected, isPreorder }) => {
   const methods = useForm({
-    mode: "onTouched",
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
       contact: "",
       country: "",
@@ -21,8 +22,20 @@ export const OrderForm = ({ selected, isPreorder }) => {
   const {
     register,
     handleSubmit,
+    clearErrors,
     formState: { errors },
   } = methods;
+
+  const registerWithClear = (name, rules) => {
+    const reg = register(name, rules);
+    return {
+      ...reg,
+      onChange: (e) => {
+        clearErrors(name);
+        reg.onChange(e);
+      },
+    };
+  };
 
   const finalPrice = isPreorder ? 2499 * 0.8 : 2499;
 
@@ -48,7 +61,7 @@ export const OrderForm = ({ selected, isPreorder }) => {
           <CustomInput
             placeholder="Номер телефона или Email"
             error={errors.contact?.message}
-            {...register("contact", { required: "Обязательное поле" })}
+            {...registerWithClear("contact", { required: "Обязательное поле" })}
           />
         </div>
 
@@ -57,35 +70,41 @@ export const OrderForm = ({ selected, isPreorder }) => {
           <CustomInput
             placeholder="Страна или регион"
             error={errors.country?.message}
-            {...register("country", { required: "Обязательное поле" })}
+            {...registerWithClear("country", { required: "Обязательное поле" })}
           />
           <div className="inline">
             <CustomInput
               placeholder="Имя"
               error={errors.firstName?.message}
-              {...register("firstName", { required: "Обязательное поле" })}
+              {...registerWithClear("firstName", {
+                required: "Обязательное поле",
+              })}
             />
             <CustomInput
               placeholder="Фамилия"
               error={errors.lastName?.message}
-              {...register("lastName", { required: "Обязательное поле" })}
+              {...registerWithClear("lastName", {
+                required: "Обязательное поле",
+              })}
             />
           </div>
           <CustomInput
             placeholder="Адрес доставки"
             error={errors.address?.message}
-            {...register("address", { required: "Обязательное поле" })}
+            {...registerWithClear("address", { required: "Обязательное поле" })}
           />
           <div className="inline">
             <CustomInput
               placeholder="Город"
               error={errors.city?.message}
-              {...register("city", { required: "Обязательное поле" })}
+              {...registerWithClear("city", { required: "Обязательное поле" })}
             />
             <CustomInput
               placeholder="Индекс"
               error={errors.postal?.message}
-              {...register("postal", { required: "Обязательное поле" })}
+              {...registerWithClear("postal", {
+                required: "Обязательное поле",
+              })}
             />
           </div>
 
