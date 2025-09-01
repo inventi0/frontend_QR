@@ -17,5 +17,9 @@
         color: red;
       }
     }
+
+    &:focus {
+      border-color: #007bff;
+    }
   }
 }

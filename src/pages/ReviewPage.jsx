@@ -1,19 +1,28 @@
 import React, { useState } from "react";
 import { ReviewCard } from "../components/ReviewCard/ReviewCard";
 import "./ReviewPage.scss";
-import { reviews } from "../utils/data";
-import backProfile from "../assets/backProfile.png";
+import { reviews as initialReviews } from "../utils/data";
+import { Modal } from "../components/Modal/Modal";
+import { ReviewForm } from "../components/ReviewForm/ReviewForm";
 
 export const ReviewPage = () => {
   const [showAll, setShowAll] = useState(false);
+  const [modalActive, setModalActive] = useState(false);
+  const [allReviews, setAllReviews] = useState(initialReviews);
 
-  const visibleReviews = showAll ? reviews : reviews.slice(0, 6);
+  const visibleReviews = showAll ? allReviews : allReviews.slice(0, 6);
+
+  const handleAddReview = (newReview) => {
+    setAllReviews((prev) => [{ id: Date.now(), ...newReview }, ...prev]);
+    setModalActive(false);
+  };
 
   return (
-    <div
-      className="reviews-page"
-    >
+    <div className="reviews-page">
       <h1 className="reviews-title">Отзывы Пользователей</h1>
+      <button className="review-button" onClick={() => setModalActive(true)}>
+        Оставить отзыв
+      </button>
 
       <div className="reviews-container">
         {visibleReviews.map((review) => (
@@ -30,9 +39,13 @@ export const ReviewPage = () => {
 
       {!showAll && (
         <button className="view-all-button" onClick={() => setShowAll(true)}>
-          Посмотреть все отзывы
+          Показать еще
         </button>
       )}
+
+      <Modal active={modalActive} setActive={setModalActive}>
+        <ReviewForm onSubmit={handleAddReview} />
+      </Modal>
     </div>
   );
 };

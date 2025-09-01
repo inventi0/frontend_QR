@@ -37,6 +37,30 @@
   }
 }
 
+.review-button {
+  display: block;
+  margin-bottom: 20px;
+  padding: 14px 32px;
+  font-size: 18px;
+  font-weight: 500;
+  color: white;
+  background: #5555ff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: #3a3af0;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+
 .view-all-button {
   display: block;
   margin: 40px auto 0;
