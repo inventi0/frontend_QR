@@ -1,14 +1,15 @@
 /* src/components/CanvasComponent.module.css */
 .paintCanvas {
-    display: block;
-    /* Let CSS handle the display size */
-    width: 100%;
-    height: 100%;
-    cursor: crosshair;
-    touch-action: none; /* Prevent default touch actions like scroll/zoom */
-    user-select: none;
-    -webkit-user-drag: none;
-    /* background-color set by container or JS fill */
+  display: block;
+  /* Let CSS handle the display size */
+  width: 100%;
+  height: 100%;
+  @media (max-width: 1024px) {
+    min-height: 650px;
   }
-
-  /* Created by Ram Bapat, www.linkedin.com/in/ram-bapat-barrsum-diamos */
+  cursor: crosshair;
+  touch-action: none; /* Prevent default touch actions like scroll/zoom */
+  user-select: none;
+  -webkit-user-drag: none;
+  /* background-color set by container or JS fill */
+}
