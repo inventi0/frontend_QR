@@ -17,18 +17,31 @@ const CreatorPage = () => {
   };
   return (
     <div className={`creator-card`} onClick={() => navigate("/creator")}>
-      <img className="creator-image" src={creator} alt="creator" />
+      <img
+        className="creator-image"
+        src={
+          "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/creator.png"
+        }
+        alt="creator"
+      />
       <div className="creator-info">
         <div className="top-row">
           <h3>Без Названия</h3>
         </div>
         <div className="author-row">
-          <img className="avatar-small" src={avatar} alt="avatar" />
+          <img
+            className="avatar-small"
+            src={
+              "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png"
+            }
+            alt="avatar"
+          />
           <span>Абдурахман</span>
         </div>
         <div className="bottom-row">
           <span className="bottom-row__count">
-            <EyePasswordShow color="white"/> <span style={{ marginLeft: 7}}>284</span>
+            <EyePasswordShow color="white" />{" "}
+            <span style={{ marginLeft: 7 }}>284</span>
           </span>
           <span className="address" onClick={() => handleCopy("0xc0E3...B79C")}>
             <Copy />

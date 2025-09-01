@@ -16,13 +16,13 @@ export const UsageScenarios = () => {
           <UsageCard
             title="В редакторе можно добавлять что угодно"
             text="В пределах разумного. Поделитесь пользовательской картинкой!"
-            image={imgEditor}
+            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/editor.png"}
             alt="Редактор"
           />
           <UsageCard
             title="Выражай свою жизненную позицию через S&S"
             text="Донесите мысль до окружающих"
-            image={imgCouple}
+            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/couple.png"}
             alt="Пара"
           />
         </div>
@@ -30,13 +30,13 @@ export const UsageScenarios = () => {
           <UsageCard
             title="Футболка в качестве визитки"
             text="Разместите информацию о себе и станьте самым запоминающимся"
-            image={imgShirt}
+            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shirt.png"}
             alt="Футболка"
           />
           <UsageCard
             title="На случай если близкий потерялся"
             text="Если боитесь, что ваш родственник потеряется — укажите контакты для связи"
-            image={imgQuestion}
+            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/question.png"}
             alt="Вопрос"
           />
         </div>

@@ -14,7 +14,13 @@ const ProfileHeader = () => {
   return (
     <div className="profile-header">
       <div className="profile-info">
-        <img src={avatar} alt="avatar" className="avatar" />
+        <img
+          src={
+            "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png"
+          }
+          alt="avatar"
+          className="avatar"
+        />
         <div>
           <h1>Абдурахман</h1>
           <p>Карточки: 3</p>

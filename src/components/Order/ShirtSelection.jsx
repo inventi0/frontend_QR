@@ -29,13 +29,13 @@ export const ShirtSelection = ({ onNext }) => {
           className={`shirt-box ${selectedColor === "white" ? "active" : ""}`}
           onClick={() => setSelectedColor("white")}
         >
-          <img src={whiteShirt} alt="Белая футболка" />
+          <img src={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"} alt="Белая футболка" />
         </div>
         <div
           className={`shirt-box ${selectedColor === "black" ? "active" : ""}`}
           onClick={() => setSelectedColor("black")}
         >
-          <img src={blackShirt} alt="Черная футболка" />
+          <img src={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png"} alt="Черная футболка" />
         </div>
       </div>
 
