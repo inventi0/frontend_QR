@@ -1,15 +1,27 @@
-import React from 'react';
-import './ProductCard.scss';
+import React from "react";
+import "./ProductCard.scss";
 
-export const ProductCard = ({ title, image, description, width, height, position }) => {
+export const ProductCard = ({
+  title,
+  image,
+  description,
+  width,
+  height,
+  position,
+  onClickHandler,
+}) => {
   const style = {
-    height: `${height}px`
+    height: `${height}px`,
   };
 
   return (
-    <div className={`product-card ${position}`} style={style}>
+    <div
+      className={`product-card ${position}`}
+      style={style}
+      onClick={onClickHandler}
+    >
       <img src={image} alt={title} className="product-image" />
-      
+
       <div className="product-title-overlay">
         <div className="product-title">
           <span>{title}</span>
