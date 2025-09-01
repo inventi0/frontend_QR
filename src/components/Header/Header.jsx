@@ -26,7 +26,7 @@ export const Header = ({ onClickHandler }) => {
   return (
     <>
       <div className="header-container">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")}>
           <Logo />
         </div>
 
