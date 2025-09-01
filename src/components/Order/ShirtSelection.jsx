@@ -9,7 +9,9 @@ export const ShirtSelection = ({ onNext }) => {
   const [selectedPrint, setSelectedPrint] = useState(1);
 
   const getShirtImage = () => {
-    return selectedColor === "white" ? whiteShirt : blackShirt;
+    return selectedColor === "white"
+      ? "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"
+      : "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png";
   };
 
   const handleNext = (type) => {
@@ -29,13 +31,23 @@ export const ShirtSelection = ({ onNext }) => {
           className={`shirt-box ${selectedColor === "white" ? "active" : ""}`}
           onClick={() => setSelectedColor("white")}
         >
-          <img src={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"} alt="Белая футболка" />
+          <img
+            src={
+              "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"
+            }
+            alt="Белая футболка"
+          />
         </div>
         <div
           className={`shirt-box ${selectedColor === "black" ? "active" : ""}`}
           onClick={() => setSelectedColor("black")}
         >
-          <img src={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png"} alt="Черная футболка" />
+          <img
+            src={
+              "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png"
+            }
+            alt="Черная футболка"
+          />
         </div>
       </div>
 
