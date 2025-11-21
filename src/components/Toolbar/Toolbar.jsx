@@ -9,6 +9,7 @@ import {
   FaSquare,
   FaCircle,
   FaFillDrip,
+  FaRegImages,
 } from "react-icons/fa";
 import styles from "./Toolbar.module.scss";
 
@@ -37,6 +38,12 @@ function Toolbar({
   setSelectedTool,
   clearCanvas,
   downloadImage,
+  onImportImage,
+  onSaveTemplate,
+  savingTemplate,
+  templateOptions = [],
+  onLoadTemplateFromCloud,
+  isReadOnly = false,
 }) {
   return (
     <div className={styles.toolbar}>
@@ -86,6 +93,15 @@ function Toolbar({
         >
           <FaCircle />
         </button>
+        <button
+          title="Перемещение изображений"
+          className={`${styles.toolButton} ${
+            selectedTool === "image" ? styles.active : ""
+          }`}
+          onClick={() => setSelectedTool("image")}
+        >
+          <FaRegImages />
+        </button>
       </div>
 
       <div className={styles.toolSection}>
@@ -133,6 +149,7 @@ function Toolbar({
           title="Очистить"
           className={styles.actionButton}
           onClick={clearCanvas}
+          disabled={isReadOnly}
         >
           <FaTrashAlt /> <span className={styles.buttonText}>Очистить</span>
         </button>
@@ -143,6 +160,51 @@ function Toolbar({
         >
           <FaDownload /> <span className={styles.buttonText}>Сохранить</span>
         </button>
+        <label className={styles.actionButton}>
+          <FaDownload />{" "}
+          <span className={styles.buttonText}>Импортировать</span>
+          <input
+            type="file"
+            accept="image/*"
+            className={styles.hiddenInput}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onImportImage?.(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        <button
+          title="Сохранить в шаблоны"
+          className={styles.actionButton}
+          onClick={onSaveTemplate}
+          disabled={savingTemplate || isReadOnly}
+        >
+          <FaDownload />{" "}
+          <span className={styles.buttonText}>
+            {savingTemplate ? "Сохраняем..." : "Сохранить в шаблоны"}
+          </span>
+        </button>
+        {templateOptions.length > 0 && (
+          <select
+            className={styles.templateSelect}
+            defaultValue=""
+            onChange={(e) => {
+              const id = Number(e.target.value);
+              const tpl = templateOptions.find((t) => t.id === id);
+              if (tpl) onLoadTemplateFromCloud?.(tpl);
+            }}
+          >
+            <option value="" disabled>
+              Загрузить шаблон
+            </option>
+            {templateOptions.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>
+                {tpl.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

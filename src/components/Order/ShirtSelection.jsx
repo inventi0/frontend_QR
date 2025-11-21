@@ -1,12 +1,26 @@
-import { useState } from "react";
-import whiteShirt from "../../assets/white.png";
-import blackShirt from "../../assets/black.png";
+import { useState, useMemo } from "react";
 import "./order.scss";
+import { useGetMeQuery } from "../../api/authApi";
+import { useListUserTemplatesQuery } from "../../api/accountApi";
 
 export const ShirtSelection = ({ onNext }) => {
   const [selectedColor, setSelectedColor] = useState("white");
   const [selectedSize, setSelectedSize] = useState("M");
-  const [selectedPrint, setSelectedPrint] = useState(1);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const { data: me } = useGetMeQuery();
+  const userId = me?.id;
+  const { data: templates } = useListUserTemplatesQuery(
+    { userId, includeGlobal: true, limit: 50, offset: 0 },
+    { skip: !userId }
+  );
+
+  const templateOptions = useMemo(() => {
+    if (!templates) return [];
+    return templates.map((tpl) => ({
+      id: tpl.id,
+      name: tpl.name || `Шаблон #${tpl.id}`,
+    }));
+  }, [templates]);
 
   const getShirtImage = () => {
     return selectedColor === "white"
@@ -18,14 +32,14 @@ export const ShirtSelection = ({ onNext }) => {
     onNext({
       tshirtImage: getShirtImage(),
       size: selectedSize,
-      print: selectedPrint,
+      templateId: selectedTemplateId,
       type,
     });
   };
 
   return (
-    <div className="shirt-selection">
-      <h2>Отлично, теперь выберем футболку</h2>
+    <div className="modal-panel shirt-selection">
+      <h2>Выберите футболку и шаблон</h2>
       <div className="shirt-options">
         <div
           className={`shirt-box ${selectedColor === "white" ? "active" : ""}`}
@@ -64,17 +78,23 @@ export const ShirtSelection = ({ onNext }) => {
         ))}
       </div>
 
-      <div className="print-select">
-        <p>Принт</p>
-        {[1, 2].map((n) => (
-          <button
-            key={n}
-            className={selectedPrint === n ? "selected" : ""}
-            onClick={() => setSelectedPrint(n)}
+      <div className="template-select">
+        <p>Шаблон (принт)</p>
+        {templateOptions.length > 0 ? (
+          <select
+            value={selectedTemplateId || ""}
+            onChange={(e) => setSelectedTemplateId(Number(e.target.value))}
           >
-            {n}
-          </button>
-        ))}
+            <option value="">Без шаблона</option>
+            {templateOptions.map((tpl) => (
+              <option key={tpl.id} value={tpl.id}>
+                {tpl.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="muted">Шаблонов пока нет</span>
+        )}
       </div>
 
       <div className="action-buttons">

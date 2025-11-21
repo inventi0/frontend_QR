@@ -5,18 +5,25 @@ import { Sidebar } from "./Sidebar";
 import Logo from "../icons/Logo";
 import Menu from "../icons/Menu";
 
-export const Header = ({ onClickHandler }) => {
+export const Header = ({
+  onLoginClick,
+  onRegisterClick,
+  onLogout,
+  isAuthenticated,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const navLinks = [
+  const baseLinks = [
     { label: "Главная", path: "/" },
     { label: "Ассортимент", path: "/range" },
     { label: "Отзывы", path: "/reviews" },
-    { label: "Редактор", path: "/creator" },
-    { label: "Профиль", path: "/profile" },
   ];
+
+  const authedLinks = [{ label: "Профиль", path: "/profile" }];
+
+  const navLinks = isAuthenticated ? [...baseLinks, ...authedLinks] : baseLinks;
 
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
@@ -42,9 +49,22 @@ export const Header = ({ onClickHandler }) => {
           ))}
         </nav>
 
-        <button className="login-button" onClick={() => onClickHandler()}>
-          Войти
-        </button>
+        <div className="auth-buttons">
+          {!isAuthenticated ? (
+            <>
+              <button className="login-button" onClick={onRegisterClick}>
+                Регистрация
+              </button>
+              <button className="login-button" onClick={onLoginClick}>
+                Войти
+              </button>
+            </>
+          ) : (
+            <button className="login-button" onClick={onLogout}>
+              Выйти
+            </button>
+          )}
+        </div>
 
         <button
           className="burger-button"
@@ -64,9 +84,18 @@ export const Header = ({ onClickHandler }) => {
         }}
         isActive={isActive}
         onLogin={() => {
-          onClickHandler();
+          onLoginClick();
           setIsSidebarOpen(false);
         }}
+        onRegister={() => {
+          onRegisterClick();
+          setIsSidebarOpen(false);
+        }}
+        onLogout={() => {
+          onLogout();
+          setIsSidebarOpen(false);
+        }}
+        isAuthenticated={isAuthenticated}
       />
     </>
   );

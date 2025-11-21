@@ -38,6 +38,13 @@
   gap: 16px;
 }
 
+.sidebar-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .sidebar-link {
   background: none;
   border: none;
@@ -57,8 +64,8 @@
   }
 }
 
-.sidebar-login {
-  margin-top: auto;
+.sidebar-action {
+  margin-top: 8px;
   padding: 10px 0;
   background: none;
   border: 2px solid #6366f1;

@@ -35,22 +35,5 @@
 }
 
 .profile {
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  padding-bottom: 20px;
   color: white;
-
-  &__list {
-    display: flex;
-    gap: 1.5rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 1280px) {
-    &__list {
-      justify-content: center;
-    }
-  }
 }

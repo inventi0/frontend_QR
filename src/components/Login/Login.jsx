@@ -1,50 +1,96 @@
 import React, { useState } from "react";
-import "./Login.scss";
+import "../Auth/AuthModal.scss";
 import EyePasswordHide from "../icons/EyePasswordHide";
 import EyePasswordShow from "../icons/EyePasswordShow";
-import Mail from "../icons/Mail";
 import Close from "../icons/Close";
-import Lock from "../icons/Lock";
+import { useLoginMutation } from "../../api/authApi";
+import { setSession } from "../../utils/session";
 
-export const Login = ({ onClickHandler }) => {
+export const Login = ({ onClose, onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [login, { isLoading }] = useLoginMutation();
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      const data = await login(credentials).unwrap();
+      setSession({
+        accessToken: data.access_token,
+        tokenType: data.token_type,
+      });
+      onSuccess?.(data);
+      onClose?.();
+      window.location.reload();
+    } catch (err) {
+      const detail = err?.data?.detail;
+      const message =
+        (typeof detail === "string" && detail) ||
+        err?.error ||
+        "Не удалось войти. Проверьте данные и попробуйте снова.";
+      setError(message);
+    }
+  };
 
   return (
-    <div className="login-container">
-      <button onClick={onClickHandler} className="login-close-button">
-        <Close />
-      </button>
+    <div className="auth-modal">
+      <div className="auth-card">
+        <button className="auth-close" type="button" onClick={onClose}>
+          <Close />
+        </button>
+        <h1 className="auth-title">Авторизация</h1>
+        <p className="auth-subtitle">Введите email и пароль, чтобы продолжить.</p>
 
-      <div className="login-form">
-        <div className="login-title">Авторизация</div>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="auth-field">
+            <span>Email</span>
+            <input
+              type="email"
+              name="username"
+              placeholder="you@example.com"
+              value={credentials.username}
+              onChange={handleChange}
+              required
+            />
+          </label>
 
-        <div className="login-input-wrapper">
-          <span className="icon">
-            <Mail />
-          </span>
-          <input type="email" placeholder="Enter email address" />
-        </div>
+          <label className="auth-field">
+            <span>Пароль</span>
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Введите пароль"
+                value={credentials.password}
+                onChange={handleChange}
+                required
+                minLength={3}
+              />
+              <span
+                className="toggle-visibility"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyePasswordHide /> : <EyePasswordShow />}
+              </span>
+            </div>
+          </label>
 
-        <div className="login-input-wrapper">
-          <span className="icon">
-            <Lock />
-          </span>
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter password"
-          />
-          <span
-            className="toggle-visibility"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyePasswordHide /> : <EyePasswordShow />}
-          </span>
-        </div>
-        <button className="login-button__modal">LOGIN</button>
+          {error && <div className="auth-error">{error}</div>}
 
-        <div className="login-footer">
-          <span className="login-link">Забыл пароль?</span>
-        </div>
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? "Входим..." : "Войти"}
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ export const ProductCard = ({
   height,
   position,
   onClickHandler,
+  isComingSoon = false,
 }) => {
   const style = {
     height: `${height}px`,
@@ -16,9 +17,9 @@ export const ProductCard = ({
 
   return (
     <div
-      className={`product-card ${position}`}
+      className={`product-card ${position} ${isComingSoon ? "coming-soon" : ""}`}
       style={style}
-      onClick={onClickHandler}
+      onClick={isComingSoon ? undefined : onClickHandler}
     >
       <img src={image} alt={title} className="product-image" />
 
@@ -28,6 +29,8 @@ export const ProductCard = ({
           <span className="product-description">{description}</span>
         </div>
       </div>
+
+      {isComingSoon && <div className="product-badge">Coming soon</div>}
     </div>
   );
 };

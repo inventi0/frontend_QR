@@ -2,13 +2,14 @@
   background-color: #232323;
   color: white;
   width: 100%;
-  min-height: 280px;
+  min-height: 220px;
   border-radius: 26px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  height: 100%;
 
   .stars {
     font-size: 20px;
@@ -18,8 +19,7 @@
     font-size: 16px;
     line-height: 1.5;
     flex-grow: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: break-word;
   }
 
   .user-info {

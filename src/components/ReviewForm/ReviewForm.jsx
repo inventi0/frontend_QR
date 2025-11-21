@@ -2,44 +2,31 @@ import React, { useState } from "react";
 import s from "./ReviewForm.module.scss";
 import CustomInput from "../UI/CustomInput/CustomInput";
 
-export const ReviewForm = ({ onSubmit }) => {
-  const [user, setUser] = useState("");
+export const ReviewForm = ({ onSubmit, loading = false, errorMessage }) => {
   const [text, setText] = useState("");
   const [stars, setStars] = useState(5);
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user.trim() || !text.trim()) {
+    if (!text.trim()) {
       setError(true);
       return;
     }
-    onSubmit({
-      user,
-      text,
+    const ok = await onSubmit({
+      content: text.trim(),
       stars,
-      avatarUrl: null,
-      variant: "default",
     });
-    setUser("");
-    setText("");
-    setStars(5);
-    setError(false);
+    if (ok) {
+      setText("");
+      setStars(5);
+      setError(false);
+    }
   };
 
   return (
     <form className={s.form} onSubmit={handleSubmit}>
       <h2>Оставить отзыв</h2>
-
-      <CustomInput
-        type="text"
-        placeholder="Ваше имя"
-        value={user}
-        onChange={(e) => {
-          setUser(e.target.value);
-          setError(false);
-        }}
-      />
 
       <textarea
         className={s.textarea}
@@ -49,6 +36,8 @@ export const ReviewForm = ({ onSubmit }) => {
           setText(e.target.value);
           setError(false);
         }}
+        minLength={5}
+        required
       />
 
       <div className={s.stars}>
@@ -64,9 +53,12 @@ export const ReviewForm = ({ onSubmit }) => {
         ))}
       </div>
 
-      <button type="submit">Отправить</button>
+      <button type="submit" disabled={loading}>
+        {loading ? "Отправляем..." : "Отправить"}
+      </button>
 
-      {error && <div className={s.error}>Все поля должны быть заполнены</div>}
+      {error && <div className={s.error}>Заполните текст отзыва</div>}
+      {errorMessage && <div className={s.error}>{errorMessage}</div>}
     </form>
   );
 };

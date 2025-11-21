@@ -2,7 +2,17 @@ import React from "react";
 import "./Sidebar.scss";
 import Close from "../icons/Close";
 
-export const Sidebar = ({ isOpen, onClose, navLinks, onNavigate, onLogin, isActive}) => {
+export const Sidebar = ({
+  isOpen,
+  onClose,
+  navLinks,
+  onNavigate,
+  onLogin,
+  onRegister,
+  onLogout,
+  isActive,
+  isAuthenticated,
+}) => {
   return (
     <div className={`sidebar ${isOpen ? "open" : ""}`}>
       <div className="sidebar-header">
@@ -14,15 +24,30 @@ export const Sidebar = ({ isOpen, onClose, navLinks, onNavigate, onLogin, isActi
         {navLinks.map((link) => (
           <button
             key={link.path}
-            className={`sidebar-link ${isActive(link.path) ? "sidebar-link__active" : ""}`}
+            className={`sidebar-link ${
+              isActive(link.path) ? "sidebar-link__active" : ""
+            }`}
             onClick={() => onNavigate(link.path)}
           >
             {link.label}
           </button>
         ))}
-        <button className="sidebar-login" onClick={onLogin}>
-          Войти
-        </button>
+        <div className="sidebar-actions">
+          {!isAuthenticated ? (
+            <>
+              <button className="sidebar-action" onClick={onRegister}>
+                Регистрация
+              </button>
+              <button className="sidebar-action" onClick={onLogin}>
+                Войти
+              </button>
+            </>
+          ) : (
+            <button className="sidebar-action" onClick={onLogout}>
+              Выйти
+            </button>
+          )}
+        </div>
       </nav>
     </div>
   );

@@ -4,14 +4,15 @@
   align-items: center;
   height: 100%;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.65);
   position: fixed;
   top: 0;
   left: 0;
   opacity: 0;
   pointer-events: none;
-  transition: 1s;
+  transition: opacity 0.35s ease;
   z-index: 10;
+  backdrop-filter: blur(8px);
 
   &.active {
     opacity: 1;
@@ -19,16 +20,23 @@
   }
 
   &__content {
+    width: min(960px, 92vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    border-radius: 0;
+    padding: 10px;
     display: flex;
     justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    padding: 20px;
-    border-radius: 12px;
-    transform: translateY(-500px);
-    transition: 1s;
+    transform: translateY(-40px) scale(0.96);
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    opacity: 0;
+
     &.active {
-      transform: translateY(0px);
+      transform: translateY(0) scale(1);
+      opacity: 1;
     }
   }
 
@@ -36,4 +44,17 @@
     padding-left: 20px;
     padding-right: 20px;
   }
+}
+
+/* Smooth scrollbar for long forms */
+.modal__content::-webkit-scrollbar {
+  width: 0;
+}
+
+.modal__content::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.modal__content::-webkit-scrollbar-track {
+  background: transparent;
 }
