@@ -1,7 +1,7 @@
 import { useForm, FormProvider } from "react-hook-form";
 import CustomInput from "../UI/CustomInput/CustomInput";
 import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
-import "./order.scss";
+import "./Order.scss";
 import { useCreateOrderMutation, useSetQrTemplateMutation } from "../../api/accountApi";
 import { useState } from "react";
 

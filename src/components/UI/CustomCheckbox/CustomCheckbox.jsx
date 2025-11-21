@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react";
-import "./customCheckbox.scss";
+import "./CustomCheckbox.scss";
 
 const CustomCheckbox = forwardRef(
   ({ checked, onChange, label, id, ...rest }, ref) => {

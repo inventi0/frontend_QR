@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import "./order.scss";
+import "./Order.scss";
 import { useGetMeQuery } from "../../api/authApi";
 import { useListUserTemplatesQuery } from "../../api/accountApi";
 
