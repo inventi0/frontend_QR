@@ -134,6 +134,8 @@ export const RegistrationForm = ({ onClose }) => {
             <div className="auth-file-label">
               <span>Аватар</span>
               <small>Обязателен по документации</small>
+              <br />
+              <small className="auth-note">*пока аватарку менять нельзя. Выбирайте с умом!</small>
             </div>
             <input
               type="file"

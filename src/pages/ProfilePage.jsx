@@ -169,12 +169,12 @@ export const ProfilePage = () => {
                 )}
               </div>
               <div className="qr-meta">
-                <div className="meta-row">
+                {/* <div className="meta-row">
                   <span>Code</span>
                   <button onClick={() => handleCopy(qrData.code)}>
                     <Copy /> {copyState ? "Скопировано" : qrData.code}
                   </button>
-                </div>
+                </div> */}
               <div className="meta-row">
                 <span>Editor URL</span>
                 <a href={`${qrData.editor_url}/creator${currentTemplateParam}`} target="_blank" rel="noreferrer">
@@ -312,7 +312,7 @@ export const ProfilePage = () => {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Номер заказа</th>
                 <th>Статус</th>
                 <th>Сумма</th>
                 <th>Создан</th>
