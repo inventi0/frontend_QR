@@ -6,14 +6,37 @@
   backdrop-filter: blur(8px);
   color: white;
   padding: 24px;
+  padding-top: 48px;
   border-radius: 18px;
   overflow-y: auto;
+  position: relative;
 
   h2 {
     font-family: "Bicubik";
     font-weight: 400;
     font-size: 32px;
     margin-bottom: 20px;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+    padding: 0;
+    width: auto;
+    height: auto;
+
+    &:hover {
+      color: white;
+      transform: rotate(90deg);
+    }
   }
 }
 

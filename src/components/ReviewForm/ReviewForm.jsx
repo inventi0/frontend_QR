@@ -1,11 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import s from "./ReviewForm.module.scss";
 import CustomInput from "../UI/CustomInput/CustomInput";
 
-export const ReviewForm = ({ onSubmit, loading = false, errorMessage }) => {
-  const [text, setText] = useState("");
-  const [stars, setStars] = useState(5);
+export const ReviewForm = ({ onSubmit, loading = false, errorMessage, initialData = null, isEdit = false }) => {
+  const [text, setText] = useState(initialData?.content || "");
+  const [stars, setStars] = useState(initialData?.stars || 5);
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setText(initialData.content || "");
+      setStars(initialData.stars || 5);
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +24,7 @@ export const ReviewForm = ({ onSubmit, loading = false, errorMessage }) => {
       content: text.trim(),
       stars,
     });
-    if (ok) {
+    if (ok && !isEdit) {
       setText("");
       setStars(5);
       setError(false);
@@ -26,7 +33,7 @@ export const ReviewForm = ({ onSubmit, loading = false, errorMessage }) => {
 
   return (
     <form className={s.form} onSubmit={handleSubmit}>
-      <h2>Оставить отзыв</h2>
+      <h2>{isEdit ? "Редактировать отзыв" : "Оставить отзыв"}</h2>
 
       <textarea
         className={s.textarea}
@@ -54,7 +61,7 @@ export const ReviewForm = ({ onSubmit, loading = false, errorMessage }) => {
       </div>
 
       <button type="submit" disabled={loading}>
-        {loading ? "Отправляем..." : "Отправить"}
+        {loading ? (isEdit ? "Сохраняем..." : "Отправляем...") : (isEdit ? "Сохранить" : "Отправить")}
       </button>
 
       {error && <div className={s.error}>Заполните текст отзыва</div>}

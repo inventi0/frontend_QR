@@ -18,7 +18,9 @@ export const Header = ({
   const baseLinks = [
     { label: "Главная", path: "/" },
     { label: "Ассортимент", path: "/range" },
+    { label: "Редактор", path: "/creator" },
     { label: "Отзывы", path: "/reviews" },
+    { label: "О нас", path: "/about" },
   ];
 
   const authedLinks = [{ label: "Профиль", path: "/profile" }];

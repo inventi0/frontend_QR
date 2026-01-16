@@ -3,7 +3,7 @@ import "../Auth/AuthModal.scss";
 import EyePasswordHide from "../icons/EyePasswordHide";
 import EyePasswordShow from "../icons/EyePasswordShow";
 import Close from "../icons/Close";
-import { useLoginMutation } from "../../api/authApi";
+import { useLoginMutation, useGetMeQuery } from "../../api/authApi";
 import { setSession } from "../../utils/session";
 
 export const Login = ({ onClose, onSuccess }) => {
@@ -25,10 +25,33 @@ export const Login = ({ onClose, onSuccess }) => {
     setError("");
     try {
       const data = await login(credentials).unwrap();
+      
+      // Сохраняем токен
       setSession({
         accessToken: data.access_token,
         tokenType: data.token_type,
       });
+      
+      // Получаем информацию о пользователе и обновляем сессию с userId
+      try {
+        const meResponse = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost"}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+          },
+        });
+        
+        if (meResponse.ok) {
+          const userData = await meResponse.json();
+          setSession({
+            accessToken: data.access_token,
+            tokenType: data.token_type,
+            userId: userData.id,
+          });
+        }
+      } catch (meErr) {
+        console.warn("Не удалось получить информацию о пользователе:", meErr);
+      }
+      
       onSuccess?.(data);
       onClose?.();
       window.location.reload();
