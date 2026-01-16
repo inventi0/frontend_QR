@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getSession } from "../utils/session";
 
-const BASE_URL = "http://79.143.30.97";
+// ✅ API URL из переменных окружения
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export const reviewApi = createApi({
   reducerPath: "reviewApi",
@@ -37,9 +38,35 @@ export const reviewApi = createApi({
         body: { stars, content },
         headers: { "Content-Type": "application/json" },
       }),
-      invalidatesTags: [{ type: "Reviews", id: "LIST" }],
+      invalidatesTags: [{ type: "Reviews", id: "LIST" }, { type: "Reviews", id: "MY" }],
+    }),
+    getMyReview: builder.query({
+      query: () => "/reviews/me",
+      providesTags: [{ type: "Reviews", id: "MY" }],
+    }),
+    updateReview: builder.mutation({
+      query: ({ reviewId, stars, content }) => ({
+        url: `/reviews/${reviewId}`,
+        method: "PATCH",
+        body: { stars, content },
+        headers: { "Content-Type": "application/json" },
+      }),
+      invalidatesTags: [{ type: "Reviews", id: "LIST" }, { type: "Reviews", id: "MY" }],
+    }),
+    deleteReview: builder.mutation({
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Reviews", id: "LIST" }, { type: "Reviews", id: "MY" }],
     }),
   }),
 });
 
-export const { useGetReviewsQuery, useCreateReviewMutation } = reviewApi;
+export const { 
+  useGetReviewsQuery, 
+  useCreateReviewMutation,
+  useGetMyReviewQuery,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation
+} = reviewApi;

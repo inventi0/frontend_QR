@@ -3,9 +3,10 @@ import CustomInput from "../UI/CustomInput/CustomInput";
 import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
 import "./Order.scss";
 import { useCreateOrderMutation, useSetQrTemplateMutation } from "../../api/accountApi";
+import { useGetProductQuery } from "../../api/productApi";
 import { useState } from "react";
 
-export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
+export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   const methods = useForm({
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -36,6 +37,9 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   const templateId = selected?.templateId || null;
   const qrId = selected?.qrId || null;
 
+  // ✅ Загружаем реальную цену продукта из backend
+  const { data: product } = useGetProductQuery(productId);
+  
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -47,7 +51,10 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
     };
   };
 
-  const finalPrice = isPreorder ? 2499 * 0.8 : 2499;
+  // TODO: После реализации задачи 2.1 (комбинации футболок) использовать правильный productId с учетом цвета и размера
+  // Пока используем цену из загруженного продукта или fallback 2499₽
+  const basePrice = product?.price || 2499;
+  const finalPrice = isPreorder ? Math.round(basePrice * 0.8) : basePrice;
 
   const onSubmit = async (data) => {
     setSubmitError("");
@@ -78,6 +85,14 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
+        <button 
+          type="button" 
+          className="close-btn" 
+          onClick={onClose}
+          aria-label="Закрыть"
+        >
+          ×
+        </button>
         <h2>Оформление заказа</h2>
 
         <div className="summary">
@@ -145,6 +160,33 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
             id="saveAddress"
             {...register("saveAddress")}
           />
+        </div>
+
+        <div style={{ 
+          margin: '20px 0', 
+          padding: '16px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          fontSize: '14px'
+        }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              required
+              style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <span>
+              Я согласен с условиями{' '}
+              <a 
+                href="/oferta" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#667eea', textDecoration: 'underline' }}
+              >
+                публичной оферты
+              </a>
+            </span>
+          </label>
         </div>
 
         <div className="submit-line">
