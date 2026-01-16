@@ -26,7 +26,7 @@ const colors = [
   "#A300BA",
   "#FF00FF",
   "#000000",
-  "#5a2d00", // Example basic + custom
+  "#5a2d00",
 ];
 
 function Toolbar({
@@ -76,10 +76,10 @@ function Toolbar({
           <FaFillDrip />
         </button>
         <button
-          title="Прямоугольник" /* Title changed */
+          title="Прямоугольник"
           className={`${styles.toolButton} ${
             selectedTool === "rectangle" ? styles.active : ""
-          }`} /* Tool name changed */
+          }`}
           onClick={() => setSelectedTool("rectangle")}
         >
           <FaSquare />

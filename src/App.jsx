@@ -1,20 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import "./App.scss";
 import "./pages/AssortmentPage.scss";
 import { Modal } from "./components/Modal/Modal";
 import { Login } from "./components/Login/Login";
 import { RegistrationForm } from "./components/Auth/RegistrationForm";
 import { Header } from "./components/Header/Header";
-import { MainPage } from "./pages/MainPage";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { ProfilePage } from "./pages/ProfilePage";
-import { ReviewPage } from "./pages/ReviewPage";
-import { AboutPage } from "./pages/AboutPage";
-import { CreatorPage } from "./pages/CreatorPage";
-import "./pages/CreatorPage.module.scss";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { Footer } from "./components/Footer/Footer";
-import { AssortmentPage } from "./pages/AssortmentPage";
 import { clearSession, getSession } from "./utils/session";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute/ProtectedRoute";
+
+// ✅ Lazy loading для страниц (уменьшает начальный bundle)
+const MainPage = lazy(() => import("./pages/MainPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
+const ReviewPage = lazy(() => import("./pages/ReviewPage"));
+const CreatorPage = lazy(() => import("./pages/CreatorPage"));
+const AssortmentPage = lazy(() => import("./pages/AssortmentPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const OfertaPage = lazy(() => import("./pages/OfertaPage"));
+
+// Loading компонент
+const PageLoader = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    fontSize: '24px',
+    color: '#667eea'
+  }}>
+    Загрузка...
+  </div>
+);
 
 function App() {
   const [loginModalActive, setLoginModalActive] = useState(false);
@@ -44,30 +63,39 @@ function App() {
     setRegisterModalActive(true);
   };
 
+  const isPublicProfile = location.pathname.startsWith("/profile/") && location.pathname !== "/profile";
+  const hideHeaderFooter = isPublicProfile;
+
   return (
-    <>
+    <ErrorBoundary>
+      {!hideHeaderFooter && (
       <Header
         onLoginClick={openLogin}
         onRegisterClick={openRegister}
         onLogout={handleLogout}
         isAuthenticated={isAuthenticated}
       />
+      )}
+      <Suspense fallback={<PageLoader />}>
       <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/creator" element={<CreatorPage />} />
+          <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
+          <Route path="/reviews" element={<ReviewPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/oferta" element={<OfertaPage />} />
         <Route
-          path="/"
+            path="/profile" 
           element={
-            <MainPage
-              isAuthenticated={isAuthenticated}
-              onLoginRequest={openLogin}
-              onRegisterRequest={openRegister}
-            />
-          }
-        />
-        <Route path="/creator" element={<CreatorPage />} />
-        <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
-        {/* <Route path="/about" element={<AboutPage />} /> */}
-        <Route path="/reviews" element={<ReviewPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile/:userId" 
+            element={<PublicProfilePage />} 
+          />
         <Route
           path="/range"
           element={
@@ -79,11 +107,11 @@ function App() {
           }
         />
 
-        <Route path="*" element={<MainPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
 
-      {/* футер не показываем, если мы на странице /creator */}
-      {location.pathname !== "/creator" && <Footer />}
+      {!hideHeaderFooter && <Footer />}
 
       <Modal active={loginModalActive} setActive={setLoginModalActive}>
         <Login
@@ -94,7 +122,7 @@ function App() {
       <Modal active={registerModalActive} setActive={setRegisterModalActive}>
         <RegistrationForm onClose={() => setRegisterModalActive(false)} />
       </Modal>
-    </>
+    </ErrorBoundary>
   );
 }
 

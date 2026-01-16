@@ -333,8 +333,9 @@ const CanvasComponent = forwardRef(
         const dpr = window.devicePixelRatio || 1;
         const logicalWidth = canvas.width / dpr;
         const logicalHeight = canvas.height / dpr;
-        const maxWidth = logicalWidth * 0.6;
-        const maxHeight = logicalHeight * 0.6;
+        // Заполняем весь холст (100%)
+        const maxWidth = logicalWidth;
+        const maxHeight = logicalHeight;
         const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
         const width = image.width * ratio;
         const height = image.height * ratio;

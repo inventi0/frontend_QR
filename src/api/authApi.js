@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getSession } from "../utils/session";
 
-const BASE_URL = "http://79.143.30.97";
+// ✅ API URL из переменных окружения
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export const authApi = createApi({
   reducerPath: "authApi",
@@ -52,6 +53,42 @@ export const authApi = createApi({
       query: () => ({ url: "/users/me", method: "GET" }),
       providesTags: ["Me"],
     }),
+    updateUser: builder.mutation({
+      query: (formData) => ({
+        url: "/users/me/avatar",
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["Me"],
+    }),
+    updateUserProfile: builder.mutation({
+      query: (data) => ({
+        url: "/users/me",
+        method: "PATCH",
+        body: data,
+        headers: { "Content-Type": "application/json" },
+      }),
+      invalidatesTags: ["Me"],
+    }),
+    setActiveTemplate: builder.mutation({
+      query: ({ templateId, baseUrl }) => ({
+        url: "/users/me/active-template",
+        method: "PATCH",
+        body: {
+          template_id: templateId,
+          base_url: baseUrl || window.location.origin,
+        },
+        headers: { "Content-Type": "application/json" },
+      }),
+      invalidatesTags: ["Me", "Templates"],
+    }),
+    getPublicProfile: builder.query({
+      query: (userId) => ({
+        url: `/users/${userId}/profile`,
+        method: "GET",
+      }),
+      providesTags: (result, error, userId) => [{ type: "Profile", id: userId }],
+    }),
     logout: builder.mutation({
       query: () => ({ url: "/auth/jwt/logout", method: "POST" }),
     }),
@@ -62,5 +99,9 @@ export const {
   useRegisterMutation,
   useLoginMutation,
   useGetMeQuery,
+  useUpdateUserMutation,
+  useUpdateUserProfileMutation,
+  useSetActiveTemplateMutation,
+  useGetPublicProfileQuery,
   useLogoutMutation,
 } = authApi;
