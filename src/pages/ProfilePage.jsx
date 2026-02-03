@@ -358,7 +358,12 @@ export const ProfilePage = () => {
             </div>
             <div>
               <span className="muted">Сумма</span>
-              <strong>{activeOrder.total_amount}₽</strong>
+              <strong>
+                {activeOrder.items && activeOrder.items.length > 0
+                  ? activeOrder.items.reduce((sum, item) => sum + (item.amount * item.quantity || 0), 0)
+                  : activeOrder.total_amount}
+                ₽
+              </strong>
             </div>
             <div>
               <span className="muted">Создан</span>
@@ -379,7 +384,7 @@ export const ProfilePage = () => {
                   </div>
                   <div className="order-item__meta">
                     <span>Кол-во: {item.quantity}</span>
-                    <span>Цена: {item.amount}₽</span>
+                    <span>Цена: {(item.amount * item.quantity).toFixed(2)}₽</span>
                   </div>
                 </div>
               ))
