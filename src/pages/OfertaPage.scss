@@ -1,0 +1,77 @@
+.oferta-page {
+  padding: 32px 16px;
+  display: flex;
+  justify-content: center;
+  background: transparent;
+  min-height: 60vh;
+}
+
+.oferta-container {
+  max-width: 980px;
+  width: 100%;
+  background: transparent;
+  padding: 36px;
+  border-radius: 14px;
+  box-shadow: none;
+  color: #f3f3f3;
+  line-height: 1.75;
+  border: none;
+}
+
+.oferta-header {
+  margin-bottom: 14px;
+}
+
+.oferta-title {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  color: #f3f3f3;
+}
+
+.oferta-intro {
+  margin: 0;
+  color: rgba(243,243,243,0.85);
+  font-size: 15px;
+}
+
+.oferta-container .notice {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 14px 16px;
+  border-radius: 10px;
+  color: #f3f3f3;
+  margin: 18px 0 22px 0;
+}
+
+.content-title {
+  font-size: 18px;
+  margin: 6px 0 12px 0;
+  color: #f3f3f3;
+}
+
+.content-list {
+  padding-left: 20px;
+  margin: 0 0 8px 0;
+}
+
+.oferta-container p.updated {
+  margin-top: 20px;
+  font-size: 13px;
+  color: rgba(243,243,243,0.75);
+}
+
+.content-list li {
+  color: inherit;
+}
+
+@media (max-width: 768px) {
+  .oferta-container {
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .oferta-title {
+    font-size: 22px;
+  }
+}

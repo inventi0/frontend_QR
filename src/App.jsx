@@ -84,6 +84,7 @@ function App() {
           <Route path="/reviews" element={<ReviewPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/oferta" element={<OfertaPage />} />
+          <Route path="/offer" element={<OfertaPage />} />
         <Route
             path="/profile" 
           element={

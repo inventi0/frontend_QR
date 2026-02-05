@@ -81,6 +81,9 @@ export const Footer = () => {
             <Mail />
             Eduard_III@mail.ru
           </a>
+          <a href="/offer" target="_blank" rel="noopener noreferrer" className="footer__offer">
+            Публичная оферта
+          </a>
         </div>
       </div>
     </div>
