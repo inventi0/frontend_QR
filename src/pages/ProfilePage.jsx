@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useRef } from "react";
 import "./ProfilePage.scss";
-import { 
-  useGetMeQuery, 
+import {
+  useGetMeQuery,
   useUpdateUserMutation,
   useUpdateUserProfileMutation,
-  useSetActiveTemplateMutation 
+  useSetActiveTemplateMutation
 } from "../api/authApi";
 import {
   useListOrdersQuery,
@@ -77,7 +77,7 @@ export const ProfilePage = () => {
   const [updateUserProfile, { isLoading: isUpdatingProfile }] = useUpdateUserProfileMutation();
   const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteTemplateMutation();
   const [setActiveTemplate, { isLoading: isSettingActive }] = useSetActiveTemplateMutation();
-  
+
   // Получаем QR-код пользователя
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
 
@@ -213,7 +213,7 @@ export const ProfilePage = () => {
             <div className="avatar-wrapper" onClick={handleAvatarClick}>
               <img src={avatar} alt={me.username} className="avatar" />
               <div className="avatar-overlay">
-                <span>Изменить фото</span>
+                <span>Изменить</span>
               </div>
               <input
                 type="file"
@@ -225,7 +225,7 @@ export const ProfilePage = () => {
             </div>
             {uploadError && <div className="error-text">{uploadError}</div>}
             {isUpdatingUser && <div className="muted">Загружаем...</div>}
-            
+
             {/* Имя пользователя с возможностью редактирования */}
             {isEditingUsername ? (
               <div className="username-edit-section">
@@ -267,22 +267,22 @@ export const ProfilePage = () => {
                 </button>
               </div>
             )}
-            
+
             <div className="user-id-section">
               <button className="copy-btn" onClick={() => handleCopy(me.id)}>
                 <Copy />
                 {copyState ? "Скопировано" : `User ID: ${me.id}`}
               </button>
             </div>
-            
+
             {/* QR-код профиля */}
             {qrData?.qr_image_url && (
               <div className="qr-section">
                 <h3>Ваш QR-код</h3>
                 <div className="qr-image-container">
-                  <img 
-                    src={qrData.qr_image_url} 
-                    alt="QR-код профиля" 
+                  <img
+                    src={qrData.qr_image_url}
+                    alt="QR-код профиля"
                     className="qr-image"
                   />
                 </div>
@@ -312,7 +312,7 @@ export const ProfilePage = () => {
                 + Добавить шаблон
               </button>
             </div>
-            
+
             <div className="templates-list">
               {templates && templates.length > 0 ? (
                 templates.map((tpl) => (
@@ -427,53 +427,53 @@ export const ProfilePage = () => {
         <div className="order-drawer">
           <div className="order-drawer__backdrop" onClick={() => setActiveOrder(null)} />
           <div className="order-drawer__panel">
-          <div className="order-drawer__header">
-            <h3>Заказ #{activeOrder.id}</h3>
-            <button className="close-btn" onClick={() => setActiveOrder(null)}>
-              ×
-            </button>
-          </div>
-          <div className="order-drawer__meta">
-            <div>
-              <span className="muted">Статус</span>
-              <strong className={getOrderStatusClass(activeOrder.status)}>
-                {getOrderStatusText(activeOrder.status)}
-              </strong>
+            <div className="order-drawer__header">
+              <h3>Заказ #{activeOrder.id}</h3>
+              <button className="close-btn" onClick={() => setActiveOrder(null)}>
+                ×
+              </button>
             </div>
-            <div>
-              <span className="muted">Сумма</span>
-              <strong>{activeOrder.total_amount}₽</strong>
+            <div className="order-drawer__meta">
+              <div>
+                <span className="muted">Статус</span>
+                <strong className={getOrderStatusClass(activeOrder.status)}>
+                  {getOrderStatusText(activeOrder.status)}
+                </strong>
+              </div>
+              <div>
+                <span className="muted">Сумма</span>
+                <strong>{activeOrder.total_amount}₽</strong>
+              </div>
+              <div>
+                <span className="muted">Создан</span>
+                <strong>{formatDate(activeOrder.created_at)}</strong>
+              </div>
             </div>
-            <div>
-              <span className="muted">Создан</span>
-              <strong>{formatDate(activeOrder.created_at)}</strong>
-            </div>
-          </div>
-          <div className="order-drawer__items">
-            <h4>Товары</h4>
-            {activeOrder.items && activeOrder.items.length > 0 ? (
-              activeOrder.items.map((item) => (
-                <div key={item.id} className="order-item">
-                  <div>
-                    <strong>{item.product?.type || "Товар"}</strong>
-                    <div className="muted">
-                      Размер: {item.product?.size || "-"}, Цвет:{" "}
-                      {item.product?.color || "-"}
+            <div className="order-drawer__items">
+              <h4>Товары</h4>
+              {activeOrder.items && activeOrder.items.length > 0 ? (
+                activeOrder.items.map((item) => (
+                  <div key={item.id} className="order-item">
+                    <div>
+                      <strong>{item.product?.type || "Товар"}</strong>
+                      <div className="muted">
+                        Размер: {item.product?.size || "-"}, Цвет:{" "}
+                        {item.product?.color || "-"}
+                      </div>
+                    </div>
+                    <div className="order-item__meta">
+                      <span>Кол-во: {item.quantity}</span>
+                      <span>Цена: {item.amount}₽</span>
                     </div>
                   </div>
-                  <div className="order-item__meta">
-                    <span>Кол-во: {item.quantity}</span>
-                    <span>Цена: {item.amount}₽</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="muted">Пока без товаров.</div>
-            )}
+                ))
+              ) : (
+                <div className="muted">Пока без товаров.</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 };

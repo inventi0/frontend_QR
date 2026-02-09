@@ -10,6 +10,7 @@ import { Footer } from "./components/Footer/Footer";
 import { clearSession, getSession } from "./utils/session";
 import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute/ProtectedRoute";
+import { PageContainer } from "./components/UI/PageContainer/PageContainer";
 
 // ✅ Lazy loading для страниц (уменьшает начальный bundle)
 const MainPage = lazy(() => import("./pages/MainPage"));
@@ -68,50 +69,54 @@ function App() {
 
   return (
     <ErrorBoundary>
-      {!hideHeaderFooter && (
-      <Header
-        onLoginClick={openLogin}
-        onRegisterClick={openRegister}
-        onLogout={handleLogout}
-        isAuthenticated={isAuthenticated}
-      />
-      )}
       <Suspense fallback={<PageLoader />}>
-      <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/creator" element={<CreatorPage />} />
-          <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
-          <Route path="/reviews" element={<ReviewPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/oferta" element={<OfertaPage />} />
-        <Route
-            path="/profile" 
-          element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/profile/:userId" 
-            element={<PublicProfilePage />} 
-          />
-        <Route
-          path="/range"
-          element={
-            <AssortmentPage
+        {!hideHeaderFooter ? (
+          <PageContainer>
+            <Header
+              onLoginClick={openLogin}
+              onRegisterClick={openRegister}
+              onLogout={handleLogout}
               isAuthenticated={isAuthenticated}
-              onLoginRequest={openLogin}
-              onRegisterRequest={openRegister}
             />
-          }
-        />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            <Routes>
+              <Route path="/" element={<MainPage />} />
+              <Route path="/creator" element={<CreatorPage />} />
+              <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
+              <Route path="/reviews" element={<ReviewPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/oferta" element={<OfertaPage />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/range"
+                element={
+                  <AssortmentPage
+                    isAuthenticated={isAuthenticated}
+                    onLoginRequest={openLogin}
+                    onRegisterRequest={openRegister}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <Footer />
+          </PageContainer>
+        ) : (
+          <Routes>
+            <Route
+              path="/profile/:userId"
+              element={<PublicProfilePage />}
+            />
+            {/* Fallback for other routes if needed, though hideHeaderFooter logic mostly isolates profile/:userId */}
+          </Routes>
+        )}
       </Suspense>
-
-      {!hideHeaderFooter && <Footer />}
 
       <Modal active={loginModalActive} setActive={setLoginModalActive}>
         <Login

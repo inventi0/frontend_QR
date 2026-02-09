@@ -1,6 +1,6 @@
 .about-section {
   padding: 60px 20px;
-  background: #0a0a0a;
+  background: transparent;
   color: white;
 }
 
@@ -21,14 +21,14 @@
   max-width: 800px;
   margin: 0 auto 48px;
   text-align: center;
-  
+
   p {
     font-size: 18px;
     line-height: 1.8;
     margin-bottom: 16px;
     opacity: 0.95;
   }
-  
+
   strong {
     font-weight: 700;
     font-size: 20px;
@@ -52,33 +52,33 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
   }
-  
+
   &.expanded {
     transform: scale(1.02);
-    
+
     .feature-toggle {
       transform: rotate(180deg);
     }
   }
-  
+
   h3 {
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 12px;
   }
-  
+
   .feature-short {
     font-size: 16px;
     line-height: 1.6;
     color: #ccc;
     transition: all 0.3s ease;
   }
-  
+
   .feature-toggle {
     position: absolute;
     top: 16px;
@@ -95,7 +95,7 @@
     justify-content: center;
     cursor: pointer;
     transition: transform 0.3s ease, background 0.3s ease;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.2);
     }
@@ -106,15 +106,15 @@
   .about-section {
     padding: 40px 16px;
   }
-  
+
   .about-title {
     font-size: 32px;
   }
-  
+
   .about-content p {
     font-size: 16px;
   }
-  
+
   .about-features {
     grid-template-columns: 1fr;
     gap: 16px;

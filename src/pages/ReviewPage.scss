@@ -21,7 +21,7 @@
 
 .reviews-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   grid-auto-rows: minmax(220px, auto);
   grid-auto-flow: dense;
   gap: 30px;
@@ -76,12 +76,10 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: conic-gradient(
-    from 90deg,
-    rgba(138, 91, 246, 0.1),
-    rgba(95, 214, 255, 0.9),
-    rgba(138, 91, 246, 0.1)
-  );
+  background: conic-gradient(from 90deg,
+      rgba(138, 91, 246, 0.1),
+      rgba(95, 214, 255, 0.9),
+      rgba(138, 91, 246, 0.1));
   animation: spin 1.2s linear infinite;
   filter: drop-shadow(0 0 12px rgba(95, 214, 255, 0.45));
 }

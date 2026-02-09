@@ -21,6 +21,14 @@
   @media (max-width: 800px) {
     height: 400px;
   }
+
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    height: 350px;
+    padding: 10px;
+  }
 }
 
 .text-block h1 {
@@ -29,12 +37,17 @@
   font-weight: bold;
   line-height: 1.2;
   text-transform: uppercase;
+
   @media (max-width: 1024px) {
     font-size: 48px;
   }
 
   @media (max-width: 800px) {
     font-size: 36px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 28px;
   }
 }
 
