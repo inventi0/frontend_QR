@@ -29,7 +29,7 @@ export const PublicProfilePage = () => {
     );
   }
 
-  // Если это владелец, редирект на обычный профиль
+  // Если это владелец, редирект на обычный профиль.
   if (profile.is_owner) {
     navigate("/profile", { replace: true });
     return null;
