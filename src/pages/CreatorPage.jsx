@@ -165,6 +165,7 @@ export function CreatorPage() {
             selectedColor={selectedColor}
             lineWidth={lineWidth}
             selectedTool={selectedTool}
+            setSelectedTool={setSelectedTool}
             theme={theme}
             canEdit={isAuthenticated}
           />

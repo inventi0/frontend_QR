@@ -9,6 +9,8 @@ import {
   FaSquare,
   FaCircle,
   FaFillDrip,
+  FaMousePointer,
+  FaFont,
   FaRegImages,
 } from "react-icons/fa";
 import styles from "./Toolbar.module.scss";
@@ -94,14 +96,36 @@ function Toolbar({
           <FaCircle />
         </button>
         <button
-          title="Перемещение изображений"
+          title="Выделение и перемещение"
           className={`${styles.toolButton} ${
-            selectedTool === "image" ? styles.active : ""
+            selectedTool === "select" ? styles.active : ""
           }`}
-          onClick={() => setSelectedTool("image")}
+          onClick={() => setSelectedTool("select")}
         >
-          <FaRegImages />
+          <FaMousePointer />
         </button>
+        <button
+          title="Добавить текст"
+          className={`${styles.toolButton} ${
+            selectedTool === "text" ? styles.active : ""
+          }`}
+          onClick={() => setSelectedTool("text")}
+        >
+          <FaFont />
+        </button>
+        <label className={`${styles.toolButton} ${styles.fileInputLabel}`} title="Добавить изображение">
+          <FaRegImages />
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onImportImage?.(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
       </div>
 
       <div className={styles.toolSection}>
@@ -160,20 +184,7 @@ function Toolbar({
         >
           <FaDownload /> <span className={styles.buttonText}>Сохранить</span>
         </button>
-        <label className={styles.actionButton}>
-          <FaDownload />{" "}
-          <span className={styles.buttonText}>Импортировать</span>
-          <input
-            type="file"
-            accept="image/*"
-            className={styles.hiddenInput}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onImportImage?.(file);
-              e.target.value = "";
-            }}
-          />
-        </label>
+
         <button
           title="Сохранить в шаблоны"
           className={styles.actionButton}
