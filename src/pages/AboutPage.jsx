@@ -1,9 +1,12 @@
-import React from 'react';
+import { AboutSection } from "../components/AboutSection/AboutSection";
 
 export const AboutPage = () => {
-    return (
-        <div>
-            о бренде
-        </div>
-    );
-}
+  return (
+    <div>
+      <AboutSection />
+    </div>
+  );
+};
+
+// ✅ Default export для lazy loading
+export default AboutPage;

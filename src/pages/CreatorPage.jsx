@@ -11,9 +11,9 @@ import {
 } from "../api/accountApi";
 
 export function CreatorPage() {
-  const [selectedColor, setSelectedColor] = useState('#FFFFFF'); // Default: white for dark theme
+  const [selectedColor, setSelectedColor] = useState('#FFFFFF');
   const [lineWidth, setLineWidth] = useState(5);
-  const [selectedTool, setSelectedTool] = useState('pen'); // 'pen', 'eraser', 'rectangle', 'circle', 'bucket'
+  const [selectedTool, setSelectedTool] = useState('pen');
   const [theme, setTheme] = useState('dark');
   const canvasComponentRef = useRef(null);
   const location = useLocation();
@@ -71,13 +71,21 @@ export function CreatorPage() {
       alert('Сохранение доступно только после входа.');
       return;
     }
+    
+    const defaultName = `Дизайн ${new Date().toLocaleDateString('ru-RU')}`;
+    const templateName = prompt('Введите название шаблона:', defaultName);
+    
+    if (!templateName) {
+      return;
+    }
+    
     const blob = await canvasComponentRef.current.toBlob();
     if (!blob) return;
     const file = new File([blob], 'template.png', { type: 'image/png' });
     try {
       const saved = await createTemplate({
         file,
-        name: `Template ${new Date().toLocaleString()}`,
+        name: templateName.trim(),
       }).unwrap();
       if (incomingQrId) {
         try {
@@ -98,6 +106,38 @@ export function CreatorPage() {
       canvasComponentRef.current.loadFromUrl(incomingTemplateUrl);
     }
   }, [incomingTemplateUrl]);
+
+  // Автоматическое скрытие Header при прокрутке
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const header = document.querySelector('.header-container');
+          
+          if (header) {
+            if (currentScrollY > 100 && currentScrollY > lastScrollY) {
+              // Прокручиваем вниз - скрываем Header
+              header.classList.add('header-hidden');
+            } else {
+              // Прокручиваем вверх - показываем Header
+              header.classList.remove('header-hidden');
+            }
+          }
+          
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className={styles.appContainer}>

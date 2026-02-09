@@ -149,6 +149,25 @@ export const RegistrationForm = ({ onClose }) => {
             )}
           </label>
 
+          <div className="auth-warning" style={{
+            padding: "12px",
+            marginBottom: "16px",
+            backgroundColor: "#fff3cd",
+            border: "1px solid #ffc107",
+            borderRadius: "6px",
+            color: "#856404",
+            fontSize: "14px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "8px"
+          }}>
+            <span style={{ fontSize: "18px", flexShrink: 0 }}>⚠️</span>
+            <span>
+              <strong>Важно:</strong> После регистрации изменить аватар будет невозможно. 
+              Выберите подходящее изображение сразу.
+            </span>
+          </div>
+
           {error && <div className="auth-error">{error}</div>}
           {success && <div className="auth-success">{success}</div>}
 

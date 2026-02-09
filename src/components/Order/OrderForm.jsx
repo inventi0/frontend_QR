@@ -45,6 +45,9 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   const templateId = selected?.templateId || null;
   const qrId = selected?.qrId || null;
 
+  // ✅ Загружаем реальную цену продукта из backend
+  const { data: product } = useGetProductQuery(productId);
+  
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -165,6 +168,14 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
+        <button 
+          type="button" 
+          className="close-btn" 
+          onClick={onClose}
+          aria-label="Закрыть"
+        >
+          ×
+        </button>
         <h2>Оформление заказа</h2>
 
         <div className="summary">
@@ -267,6 +278,33 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
             id="saveAddress"
             {...register("saveAddress")}
           />
+        </div>
+
+        <div style={{ 
+          margin: '20px 0', 
+          padding: '16px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          fontSize: '14px'
+        }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              required
+              style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <span>
+              Я согласен с условиями{' '}
+              <a 
+                href="/oferta" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#667eea', textDecoration: 'underline' }}
+              >
+                публичной оферты
+              </a>
+            </span>
+          </label>
         </div>
 
         <div className="submit-line">
