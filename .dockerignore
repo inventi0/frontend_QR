@@ -49,7 +49,6 @@ Dockerfile
 docker-compose*.yaml
 docker-compose*.yml
 .dockerignore
-nginx.conf
 
 # Misc
 *.local

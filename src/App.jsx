@@ -65,6 +65,7 @@ function App() {
 
   const isPublicProfile = location.pathname.startsWith("/profile/") && location.pathname !== "/profile";
   const hideHeaderFooter = isPublicProfile;
+  const showFooter = location.pathname === "/" || location.pathname === "/profile";
 
   return (
     <ErrorBoundary>
@@ -111,7 +112,7 @@ function App() {
       </Routes>
       </Suspense>
 
-      {!hideHeaderFooter && <Footer />}
+      {showFooter && <Footer />}
 
       <Modal active={loginModalActive} setActive={setLoginModalActive}>
         <Login
