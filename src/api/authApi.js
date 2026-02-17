@@ -17,11 +17,13 @@ export const authApi = createApi({
   }),
   endpoints: (builder) => ({
     register: builder.mutation({
-      query: ({ email, username, password, avatar }) => {
+      query: ({ email, username, password, avatar, baseUrl }) => {
         const formData = new FormData();
         formData.append("email", email);
         formData.append("username", username);
         formData.append("password", password);
+        formData.append("base_url", baseUrl || window.location.origin);
+
         if (avatar) {
           formData.append("avatar", avatar);
         }
