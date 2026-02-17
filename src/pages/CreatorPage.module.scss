@@ -5,7 +5,8 @@
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
-  padding-top: 80px;
+  padding-top: 60px;
+  /* Reduced from 80px for tighter spacing */
 }
 
 .mainContent {
@@ -13,11 +14,35 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 20px;
-  max-width: 1920px;
-  margin: 0 auto;
+  align-items: center;
+  /* Center child (editorContainer) */
   width: 100%;
+  position: relative;
+}
+
+/* NEW: EditorContainer - constrains toolbar, banner, canvas to same width */
+.editorContainer {
+  max-width: 1920px;
+  /* Match previous mainContent constraint */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Equal spacing between toolbar, banner, canvas */
+  position: relative;
+  /* Anchor for absolute toolbar */
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    /* Tighter gap on mobile */
+  }
+
+  /* Eraser Logic: Defines "paper" color */
+  --canvas-background: #2a2a2e;
+}
+
+:global(body.light-theme) .editorContainer {
+  --canvas-background: #ffffff;
 }
 
 .canvasContainer {
@@ -26,7 +51,7 @@
   z-index: 5;
   overflow: hidden;
   border: 3px solid rgba(95, 214, 255, 0.5);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background-color: var(--canvas-background);
   height: 600px;
   max-height: 70vh;
@@ -48,21 +73,54 @@
   @media (max-width: 768px) {
     height: 400px;
     max-height: 60vh;
+    margin-bottom: 80px;
+    /* NEW: reserve space for fixed toolbar dock */
   }
 }
 
 .readOnlyBanner {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 24px;
-  background: rgba(239, 68, 68, 0.9);
-  color: white;
-  border-radius: 10px;
-  font-size: 14px;
+  /* CHANGED: Container-aligned, not canvas-absolute */
+  position: relative;
+  align-self: flex-end;
+  /* Align to right on desktop */
+  margin-bottom: 12px;
+  /* Space before canvas */
+  padding: 8px 16px;
+  background: rgba(20, 20, 20, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xxxl);
+  /* 32px (was 30px) */
+  font-size: 0.85rem;
   font-weight: 500;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-  backdrop-filter: blur(10px);
+  z-index: 5;
+  /* FIXED: Below toolbar (was 60) */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+
+  @media (max-width: 768px) {
+    margin-left: 15px;
+    /* Prevent edge-hugging */
+    margin-right: 15px;
+    align-self: stretch;
+    /* Full width with margins */
+  }
+}
+
+.loginLink {
+  color: #5fd6ff;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff;
+    text-shadow: 0 0 8px rgba(95, 214, 255, 0.8);
+  }
 }

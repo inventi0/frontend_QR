@@ -5,7 +5,8 @@
   width: 100%;
   padding: 22px;
   min-width: 480px;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
+  /* 20px (was 18px) */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
@@ -20,7 +21,7 @@
   & button[type="submit"] {
     padding: 12px;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     color: #0c0c0c;
     background: linear-gradient(90deg, #8a5bf6, #5fd6ff);
     font-weight: 700;
@@ -49,7 +50,7 @@
   padding: 14px 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background-color: rgba(0, 0, 0, 0.35);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   color: white;
   font-size: 16px;
   resize: vertical;
@@ -61,11 +62,13 @@
     background-color: rgba(0, 0, 0, 0.5);
   }
 }
+
 .stars {
   display: flex;
   gap: 6px;
   justify-content: center;
 }
+
 .error {
   color: red;
   font-size: 14px;

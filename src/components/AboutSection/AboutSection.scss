@@ -44,7 +44,7 @@
 
 .feature-card {
   background: #1a1a1a;
-  border-radius: 16px;
+  border-radius: var(--radius-l);
   padding: 32px 24px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease, max-height 0.3s ease;
@@ -88,7 +88,7 @@
     color: white;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     font-size: 24px;
     display: flex;
     align-items: center;

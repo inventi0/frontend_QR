@@ -9,7 +9,7 @@
   color: white;
   padding: 24px;
   padding-top: 48px;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   overflow-y: auto;
   position: relative;
 
@@ -53,7 +53,7 @@
 
   .shirt-box {
     border: 2px solid rgba(255, 255, 255, 0.16);
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     cursor: pointer;
     padding: 4px;
 
@@ -96,7 +96,8 @@
     color: #f3f3f3;
     margin-right: 10px;
     padding: 4px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-s);
+    /* 8px (was 6px) */
     cursor: pointer;
 
     &.selected {
@@ -116,7 +117,7 @@
     font-family: "Bicubik";
     padding: 10px 20px;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.2s ease;
 
@@ -151,7 +152,8 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #f3f3f3;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-m);
+    /* 12px (was 10px) */
   }
 }
 
@@ -209,7 +211,7 @@
     background: rgba(0, 0, 0, 0.45);
     color: #f3f3f3;
     padding: 6px 12px;
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     border: 1px solid rgba(255, 255, 255, 0.18);
 
     &.discounted span {

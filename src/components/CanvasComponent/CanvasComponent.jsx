@@ -40,22 +40,59 @@ function hexToRgba(hex) {
 }
 
 const CanvasComponent = forwardRef(
-  ({ selectedColor, lineWidth, selectedTool, theme, canEdit = true }, ref) => {
+  ({ selectedColor, lineWidth, selectedTool, canEdit = true, onDirtyChange, onHistoryChange }, ref) => {
+    // --- Refs ---
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [isManipulatingShape, setIsManipulatingShape] = useState(false);
-    const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+    const historyRef = useRef([]);
+    const historyStepRef = useRef(-1);
     const drawingDataRef = useRef(null);
     const shapeStartPosRef = useRef(null);
     const canvasSnapshotRef = useRef(null);
-
-    // objects layer
-    const [objects, setObjects] = useState([]);
     const objectsRef = useRef([]);
-    const [activeObjectId, setActiveObjectId] = useState(null);
     const dragOffsetRef = useRef({ x: 0, y: 0 });
     const draggingObjectRef = useRef(null);
+
+    // --- State ---
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [isManipulatingShape, setIsManipulatingShape] = useState(false);
+    const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+    const [, setObjects] = useState([]); // Force update helper for objects
+    const [activeObjectId, setActiveObjectId] = useState(null);
+
+    // --- Constants ---
+    const MAX_HISTORY = 20;
+
+    // --- History (Undo/Redo) ---
+    // Defined here to avoid TDZ in clearCanvas
+    const saveSnapshot = useCallback(() => {
+      const canvas = canvasRef.current;
+      const context = contextRef.current;
+      if (!canvas || !context) return;
+
+      let rasterData;
+      try {
+        rasterData = context.getImageData(0, 0, canvas.width, canvas.height);
+      } catch { return; }
+
+      const objectsData = objectsRef.current.map(obj => ({ ...obj }));
+
+      if (historyStepRef.current < historyRef.current.length - 1) {
+        historyRef.current = historyRef.current.slice(0, historyStepRef.current + 1);
+      }
+
+      historyRef.current.push({ raster: rasterData, objects: objectsData });
+
+      if (historyRef.current.length > MAX_HISTORY) {
+        historyRef.current.shift();
+      } else {
+        historyStepRef.current++;
+      }
+
+      // Notify parent
+      onDirtyChange?.(true);
+      onHistoryChange?.();
+    }, [onDirtyChange, onHistoryChange]);
 
     const fillCanvasBackground = useCallback((context, canvas, bgColor = null) => {
       if (!canvas || !context) return;
@@ -113,11 +150,17 @@ const CanvasComponent = forwardRef(
       (context) => {
         if (!context) return;
         const isEraser = selectedTool === "eraser";
-        context.globalCompositeOperation = isEraser
-          ? "destination-out"
-          : "source-over";
-        context.strokeStyle = selectedColor;
-        context.fillStyle = selectedColor;
+
+        if (isEraser) {
+          context.globalCompositeOperation = "source-over";
+          context.strokeStyle = "#000000";
+          context.fillStyle = "#000000";
+        } else {
+          context.globalCompositeOperation = "source-over";
+          context.strokeStyle = selectedColor;
+          context.fillStyle = selectedColor;
+        }
+
         context.lineWidth = lineWidth;
         context.lineCap = "round";
         context.lineJoin = "round";
@@ -145,6 +188,7 @@ const CanvasComponent = forwardRef(
 
     const redrawCanvas = useCallback(
       (initialSetup = false) => {
+        // console.log("redrawCanvas called", { initialSetup, hasDrawing: !!drawingDataRef.current });
         const canvas = canvasRef.current;
         const context = contextRef.current;
         if (!canvas || !context) return;
@@ -163,7 +207,9 @@ const CanvasComponent = forwardRef(
                 canvas.width,
                 canvas.height
               );
-            } catch (e) {}
+            } catch {
+              // ignore
+            }
           }
         }
         drawObjects(context);
@@ -270,14 +316,24 @@ const CanvasComponent = forwardRef(
       const ctx = contextRef.current;
       const cnv = canvasRef.current;
       if (ctx && cnv) {
-        fillCanvasBackground(ctx, cnv);
+        // Hard Reset: Clear everything and wipe history
+        ctx.clearRect(0, 0, cnv.width, cnv.height);
+
         drawingDataRef.current = null;
         canvasSnapshotRef.current = null;
         objectsRef.current = [];
         setObjects([]);
         setActiveObjectId(null);
+
+        // Reset History
+        historyRef.current = [];
+        historyStepRef.current = -1;
+
+        // Initial Snapshot (Empty)
+        saveSnapshot();
+        onHistoryChange?.();
       }
-    }, [fillCanvasBackground]);
+    }, [saveSnapshot, onHistoryChange]);
 
     const downloadImage = useCallback(() => {
       const canvas = canvasRef.current;
@@ -329,31 +385,39 @@ const CanvasComponent = forwardRef(
     const addImageObject = useCallback(
       (image) => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        const context = contextRef.current;
+        if (!canvas || !context) return;
         const dpr = window.devicePixelRatio || 1;
+
+        // Calculate centered position
         const logicalWidth = canvas.width / dpr;
         const logicalHeight = canvas.height / dpr;
-        // Заполняем весь холст (100%)
-        const maxWidth = logicalWidth;
-        const maxHeight = logicalHeight;
+        const maxWidth = logicalWidth * 0.8; // 80% of canvas
+        const maxHeight = logicalHeight * 0.8;
         const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
         const width = image.width * ratio;
         const height = image.height * ratio;
         const x = (logicalWidth - width) / 2;
         const y = (logicalHeight - height) / 2;
-        const newObj = {
-          id: Date.now() + Math.random(),
-          image,
-          width,
-          height,
-          x,
-          y,
-        };
-        objectsRef.current = [...objectsRef.current, newObj];
-        setObjects(objectsRef.current);
-        redrawCanvas();
+
+        // Rasterize Image immediately (so it can be erased)
+        context.save();
+        context.globalCompositeOperation = "source-over";
+        context.drawImage(image, x, y, width, height);
+        context.restore();
+
+        // Update Drawing Data
+        try {
+          drawingDataRef.current = context.getImageData(0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          console.error("Error saving rasterized image:", e);
+        }
+
+        // Save history
+        saveSnapshot();
+        // redrawCanvas(); // Ensure state consistency
       },
-      [redrawCanvas]
+      [saveSnapshot]
     );
 
     const loadFromFile = useCallback(
@@ -381,40 +445,95 @@ const CanvasComponent = forwardRef(
       [addImageObject]
     );
 
+    const restoreState = useCallback((stepIndex) => {
+      const state = historyRef.current[stepIndex];
+      if (!state) return;
+
+      const canvas = canvasRef.current;
+      const context = contextRef.current;
+      if (!canvas || !context) return;
+
+      // Restore Raster
+      try {
+        context.putImageData(state.raster, 0, 0);
+        drawingDataRef.current = state.raster; // Sync drawing ref
+      } catch (e) {
+        console.error("Failed to restore raster state:", e);
+      }
+
+      // Restore Objects
+      const restoredObjects = state.objects.map(savedObj => ({ ...savedObj }));
+      objectsRef.current = restoredObjects;
+      setObjects(restoredObjects);
+
+      // Redraw everything
+      redrawCanvas();
+
+      onHistoryChange?.();
+    }, [redrawCanvas, onHistoryChange]);
+
+    const undo = useCallback(() => {
+      if (historyStepRef.current > 0) {
+        historyStepRef.current--;
+        restoreState(historyStepRef.current);
+      }
+    }, [restoreState]);
+
+    const redo = useCallback(() => {
+      if (historyStepRef.current < historyRef.current.length - 1) {
+        historyStepRef.current++;
+        restoreState(historyStepRef.current);
+      }
+    }, [restoreState]);
+
+    const canUndo = () => historyStepRef.current > 0;
+    const canRedo = () => historyStepRef.current < historyRef.current.length - 1;
+
+
+
     useImperativeHandle(
       ref,
       () => ({
-        clearCanvas,
+        clearCanvas: () => {
+          clearCanvas();
+          saveSnapshot(); // Save cleared state
+        },
         downloadImage,
         toBlob,
-        loadFromFile,
+        loadFromFile: (file) => {
+          loadFromFile(file);
+          // We need to wait for image load... loadFromFile is async in effect.
+          // For now, we rely on the user adding it, which might not be immediate history.
+          // Actually, `addImageObject` calls `redrawCanvas`. We should hook there.
+        },
         loadFromUrl,
-        addImageObject,
+        addImageObject: (img) => {
+          addImageObject(img);
+          setTimeout(saveSnapshot, 50); // Snapshot after object add
+        },
+        undo,
+        redo,
+        canUndo,
+        canRedo
       }),
-      [clearCanvas, downloadImage, toBlob, loadFromFile, loadFromUrl, addImageObject]
+      [clearCanvas, downloadImage, toBlob, loadFromFile, loadFromUrl, addImageObject, undo, redo, saveSnapshot]
     );
 
     // --- Drawing handlers with object dragging ---
     const startDrawing = useCallback(
       (event) => {
-        if (event.button > 0 || !contextRef.current) return;
+        // Fix: Remove event.button > 0 check to allow touch/stylus
+        if (!contextRef.current) return;
         const coords = getCoords(event);
 
         if (selectedTool === "image") {
-          const hit = [...objectsRef.current].reverse().find((obj) => {
-            return (
-              coords.x >= obj.x &&
-              coords.x <= obj.x + obj.width &&
-              coords.y >= obj.y &&
-              coords.y <= obj.y + obj.height
-            );
-          });
-          if (hit) {
-            draggingObjectRef.current = hit.id;
-            dragOffsetRef.current = { x: coords.x - hit.x, y: coords.y - hit.y };
-            setActiveObjectId(hit.id);
-            return;
-          }
+          // Objects are now rasterized, so selection logic removed or modified
+          // If you want to keep "Move" for *just added* items, it's complex with rasterization.
+          // For now, disabling object selection as images are pixels.
+          /* 
+          const hit = ... 
+          */
+          return; // No object manipulation
         }
 
         if (!canEdit) return;
@@ -447,7 +566,7 @@ const CanvasComponent = forwardRef(
           setIsDrawing(false);
         }
       },
-      [applyCurrentSettings, getCoords, selectedTool, floodFill]
+      [applyCurrentSettings, getCoords, selectedTool, floodFill, canEdit]
     );
 
     const draw = useCallback(
@@ -458,10 +577,10 @@ const CanvasComponent = forwardRef(
           objectsRef.current = objectsRef.current.map((obj) =>
             obj.id === objId
               ? {
-                  ...obj,
-                  x: coords.x - dragOffsetRef.current.x,
-                  y: coords.y - dragOffsetRef.current.y,
-                }
+                ...obj,
+                x: coords.x - dragOffsetRef.current.x,
+                y: coords.y - dragOffsetRef.current.y,
+              }
               : obj
           );
           setObjects(objectsRef.current);
@@ -509,21 +628,23 @@ const CanvasComponent = forwardRef(
       },
       [
         isDrawing,
-        isManipulatingShape,
-        getCoords,
         selectedTool,
+        getCoords,
+        canEdit,
         drawRectangle,
         drawCircle,
+        isManipulatingShape,
         applyCurrentSettings,
-        redrawCanvas,
+        redrawCanvas
       ]
     );
 
     const stopDrawing = useCallback(() => {
-      if (selectedTool === "image" && draggingObjectRef.current) {
+      if (draggingObjectRef.current) {
         draggingObjectRef.current = null;
         return;
       }
+
       if (!isDrawing || !contextRef.current || !canEdit) return;
       const context = contextRef.current;
 
@@ -567,6 +688,8 @@ const CanvasComponent = forwardRef(
           canvasRef.current.width,
           canvasRef.current.height
         );
+        // Save history state after drawing
+        saveSnapshot();
       } catch (e) {
         console.error("Error saving final drawing data:", e);
         drawingDataRef.current = null;
@@ -579,6 +702,8 @@ const CanvasComponent = forwardRef(
       drawCircle,
       applyCurrentSettings,
       lastPosition,
+      canEdit,
+      saveSnapshot
     ]);
 
     // --- Resize/setup effect ---
@@ -629,6 +754,10 @@ const CanvasComponent = forwardRef(
 
         drawObjects(context);
         applyCurrentSettings(context);
+
+        if (initialSetup && historyRef.current.length === 0) {
+          saveSnapshot(); // Initial empty state
+        }
       };
 
       setCanvasDimensions(true);
@@ -648,7 +777,7 @@ const CanvasComponent = forwardRef(
         if (parentElement) resizeObserver.unobserve(parentElement);
         if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
       };
-    }, [applyCurrentSettings, fillCanvasBackground, drawObjects]);
+    }, [applyCurrentSettings, fillCanvasBackground, drawObjects, saveSnapshot]);
 
     useEffect(() => {
       if (contextRef.current && !isManipulatingShape) {
