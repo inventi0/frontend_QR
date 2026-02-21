@@ -5,6 +5,7 @@ import "./Order.scss";
 import { useCreateOrderMutation, useSetQrTemplateMutation } from "../../api/accountApi";
 import { useGetProductQuery } from "../../api/productApi";
 import { useState } from "react";
+import { formatRub } from "../../utils/money";
 
 export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   const methods = useForm({
@@ -51,10 +52,11 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
     };
   };
 
-  // TODO: После реализации задачи 2.1 (комбинации футболок) использовать правильный productId с учетом цвета и размера
-  // Пока используем цену из загруженного продукта или fallback 2499₽
-  const basePrice = product?.price || 2499;
-  const finalPrice = isPreorder ? Math.round(basePrice * 0.8) : basePrice;
+  // Используем цену из загруженного продукта
+  const basePrice = product?.price;
+  const finalPrice = basePrice != null
+    ? (isPreorder ? Math.round(basePrice * 0.8) : basePrice)
+    : null;
 
   const onSubmit = async () => {
     setSubmitError("");
@@ -194,7 +196,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
             {isLoading ? "Создаём..." : "ОПЛАТИТЬ"}
           </button>
           <div className={`price-tag ${isPreorder ? "discounted" : ""}`}>
-            {isPreorder && <span>2499₽</span>} {Math.round(finalPrice)}₽
+            {isPreorder && basePrice != null && <span>{formatRub(basePrice)}</span>}{' '}{formatRub(finalPrice)}
           </div>
         </div>
         {submitError && <div className="order-error">{submitError}</div>}

@@ -14,6 +14,7 @@ import {
 } from "../api/accountApi";
 import Copy from "../components/icons/Copy";
 import { FaStar, FaCheck, FaPen, FaTrashAlt } from "react-icons/fa";
+import { formatRub } from "../utils/money";
 import EyePasswordShow from "../components/icons/EyePasswordShow";
 import { useNavigate } from "react-router-dom";
 import { getOrderStatusText, getOrderStatusClass } from "../utils/orderStatus";
@@ -404,7 +405,7 @@ export const ProfilePage = () => {
                   <div className="order-info">
                     <div className="order-info__item">
                       <span className="label">Сумма</span>
-                      <span className="value">{order.total_amount}₽</span>
+                      <span className="value">{formatRub(order.total_amount)}</span>
                     </div>
                     <div className="order-info__item">
                       <span className="label">Дата</span>
@@ -444,7 +445,7 @@ export const ProfilePage = () => {
               </div>
               <div>
                 <span className="muted">Сумма</span>
-                <strong>{activeOrder.total_amount}₽</strong>
+                <strong>{formatRub(activeOrder?.total_amount)}</strong>
               </div>
               <div>
                 <span className="muted">Создан</span>
@@ -464,8 +465,11 @@ export const ProfilePage = () => {
                       </div>
                     </div>
                     <div className="order-item__meta">
+                      <span>Цена: {formatRub(item.amount)}</span>
                       <span>Кол-во: {item.quantity}</span>
-                      <span>Цена: {item.amount}₽</span>
+                      {item.quantity > 1 && (
+                        <span>Итого: {formatRub(item.amount * item.quantity)}</span>
+                      )}
                     </div>
                   </div>
                 ))
