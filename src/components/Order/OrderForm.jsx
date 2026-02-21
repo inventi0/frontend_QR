@@ -39,7 +39,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
 
   // ✅ Загружаем реальную цену продукта из backend
   const { data: product } = useGetProductQuery(productId);
-  
+
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -56,7 +56,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   const basePrice = product?.price || 2499;
   const finalPrice = isPreorder ? Math.round(basePrice * 0.8) : basePrice;
 
-  const onSubmit = async (data) => {
+  const onSubmit = async () => {
     setSubmitError("");
     setSubmitSuccess("");
     try {
@@ -76,8 +76,8 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
       const detail = err?.data?.detail;
       setSubmitError(
         (typeof detail === "string" && detail) ||
-          err?.error ||
-          "Не удалось создать заказ"
+        err?.error ||
+        "Не удалось создать заказ"
       );
     }
   };
@@ -85,9 +85,9 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
-        <button 
-          type="button" 
-          className="close-btn" 
+        <button
+          type="button"
+          className="close-btn"
           onClick={onClose}
           aria-label="Закрыть"
         >
@@ -162,10 +162,10 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
           />
         </div>
 
-        <div style={{ 
-          margin: '20px 0', 
-          padding: '16px', 
-          backgroundColor: '#f8f9fa', 
+        <div style={{
+          margin: '20px 0',
+          padding: '16px',
+          backgroundColor: '#f8f9fa',
           borderRadius: '8px',
           fontSize: '14px'
         }}>
@@ -177,9 +177,9 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
             />
             <span>
               Я согласен с условиями{' '}
-              <a 
-                href="/oferta" 
-                target="_blank" 
+              <a
+                href="/oferta"
+                target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#667eea', textDecoration: 'underline' }}
               >

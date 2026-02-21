@@ -7,6 +7,7 @@ import {
   FaSquare,
   FaCircle,
   FaRegImages,
+  FaLayerGroup,
   FaUndo,
   FaRedo,
   FaSave,
@@ -15,7 +16,17 @@ import {
   FaChevronDown,
   FaArrowsAlt,
   FaPalette,
-  FaTimes
+  FaTimes,
+  FaClone,
+  FaLevelUpAlt,
+  FaLevelDownAlt,
+  FaAngleDoubleUp,
+  FaAngleDoubleDown,
+  FaExpandArrowsAlt,
+  FaCompressArrowsAlt,
+  FaSyncAlt,
+  FaAdjust,
+  FaBorderAll
 } from "react-icons/fa";
 import styles from "./Toolbar.module.scss";
 
@@ -55,16 +66,50 @@ function Toolbar({
   canUndo,
   canRedo,
   // Mobile Props State
+  // Mobile Props State
   isPropsPanelOpen,
-  onToggleProps
+  onToggleProps,
+  // Image Toolkit Handlers
+  activeObject,
+  onApplyHelper,
+  onLayerOrder,
+  onDeleteObject,
+  onDuplicateObject,
+  onChangeOpacity,
+  // Layers panel
+  isLayersPanelOpen,
+  onToggleLayers,
 }) {
   const [showShapes, setShowShapes] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
+  const [palettePos, setPalettePos] = useState({ top: 0, left: 0 });
+  const [shapesPos, setShapesPos] = useState({ top: 0, left: 0 });
+
+  // Local state for opacity percent input
+  const internalOpacity = activeObject?.opacity ?? 1;
+  const initialPercent = Math.max(1, Math.min(100, Math.round(internalOpacity * 100)));
+  const [opacityInput, setOpacityInput] = useState(initialPercent.toString());
+
   const shapesRef = useRef(null);
   const paletteRef = useRef(null);
   const propsPanelRef = useRef(null);
-  const [palettePos, setPalettePos] = useState({ top: 0, left: 0 });
-  const [shapesPos, setShapesPos] = useState({ top: 0, left: 0 });
+
+  // Sync internal input when external object selection / opacity changes
+  useEffect(() => {
+    if (activeObject) {
+      const pct = Math.max(1, Math.min(100, Math.round((activeObject.opacity ?? 1) * 100)));
+      setOpacityInput(pct.toString());
+    }
+  }, [activeObject]);
+
+  // Handle manual input commit
+  const commitOpacity = (valStr) => {
+    let pct = parseInt(valStr, 10);
+    if (isNaN(pct)) pct = 100;
+    pct = Math.max(1, Math.min(100, pct));
+    setOpacityInput(pct.toString());
+    onChangeOpacity(pct / 100);
+  };
 
   // Close shapes dropdown when clicking outside
   useEffect(() => {
@@ -170,18 +215,7 @@ function Toolbar({
   const showColorControls = selectedTool !== 'eraser';
   const showThicknessControls = selectedTool !== 'bucket';
 
-  // Tool Name Helper
-  const getToolName = () => {
-    switch (selectedTool) {
-      case 'pen': return 'Ручка';
-      case 'eraser': return 'Ластик';
-      case 'bucket': return 'Заливка';
-      case 'rectangle': return 'Прямоугольник';
-      case 'circle': return 'Круг';
-      case 'image': return 'Перемещение';
-      default: return 'Инструмент';
-    }
-  };
+
 
   return (
     <div className={styles.toolbarContainer}>
@@ -194,29 +228,32 @@ function Toolbar({
           <div className={styles.leftGroup}>
             <button
               title="Ручка"
+              aria-label="Ручка"
               className={`${styles.toolButton} ${selectedTool === "pen" ? styles.active : ""}`}
               onClick={() => handleToolSelect("pen")}
               style={{ color: selectedTool === "pen" ? selectedColor : undefined }}
             >
               <FaPen />
-              <span className={styles.toolLabel}>Ручка</span>
+              <span className={styles.iconLabel}>Ручка</span>
             </button>
             <button
               title="Ластик"
+              aria-label="Ластик"
               className={`${styles.toolButton} ${selectedTool === "eraser" ? styles.active : ""}`}
               onClick={() => handleToolSelect("eraser")}
             >
               <FaEraser />
-              <span className={styles.toolLabel}>Ластик</span>
+              <span className={styles.iconLabel}>Ластик</span>
             </button>
             <button
               title="Заливка"
+              aria-label="Заливка"
               className={`${styles.toolButton} ${selectedTool === "bucket" ? styles.active : ""}`}
               onClick={() => handleToolSelect("bucket")}
               style={{ color: selectedTool === "bucket" ? selectedColor : undefined }}
             >
               <FaFillDrip />
-              <span className={styles.toolLabel}>Заливка</span>
+              <span className={styles.iconLabel}>Заливка</span>
             </button>
 
             <div className={styles.separator} />
@@ -225,12 +262,12 @@ function Toolbar({
             <div className={styles.shapesWrapper} ref={shapesRef}>
               <button
                 title="Фигуры"
+                aria-label="Фигуры"
                 className={`${styles.toolButton} ${isShapeActive ? styles.active : ""}`}
                 onClick={() => setShowShapes(!showShapes)}
               >
                 <FaShapes />
-                <span className={styles.toolLabel}>Фигуры</span>
-                <FaChevronDown size={10} style={{ marginLeft: 4 }} />
+                <span className={styles.iconLabel}>Фигуры</span>
               </button>
 
               {/* Shapes Portal */}
@@ -248,14 +285,18 @@ function Toolbar({
                   <button
                     className={selectedTool === "rectangle" ? styles.active : ""}
                     onClick={() => handleToolSelect("rectangle")}
+                    aria-label="Прямоугольник"
+                    title="Прямоугольник"
                   >
-                    <FaSquare /> <span>Прямоугольник</span>
+                    <FaSquare />
                   </button>
                   <button
                     className={selectedTool === "circle" ? styles.active : ""}
                     onClick={() => handleToolSelect("circle")}
+                    aria-label="Круг"
+                    title="Круг"
                   >
-                    <FaCircle /> <span>Круг</span>
+                    <FaCircle />
                   </button>
                   {/* Backdrop */}
                   <div
@@ -269,11 +310,12 @@ function Toolbar({
 
             <button
               title="Перемещение"
+              aria-label="Перемещение/Выбор"
               className={`${styles.toolButton} ${selectedTool === "image" ? styles.active : ""}`}
               onClick={() => handleToolSelect("image")}
             >
               <FaArrowsAlt />
-              <span className={styles.toolLabel}>Двигать</span>
+              <span className={styles.iconLabel}>Двигать</span>
             </button>
           </div>
         </div>
@@ -281,9 +323,9 @@ function Toolbar({
         {/* RIGHT: Actions */}
         <div className={`${styles.glassPanel} ${styles.rightGroup}`}>
           {/* Import Image */}
-          <label className={styles.toolButton} title="Импорт картинки">
+          <label className={styles.toolButton} title="Импорт картинки" aria-label="Импорт картинки">
             <FaRegImages />
-            <span className={styles.toolLabel}>Фото</span>
+            <span className={styles.iconLabel}>Фото</span>
             <input
               type="file"
               accept="image/*"
@@ -296,37 +338,50 @@ function Toolbar({
             />
           </label>
 
+          <button
+            title="Слои"
+            aria-label="Панель слоёв"
+            className={`${styles.toolButton} ${isLayersPanelOpen ? styles.activeTool : ''}`}
+            onClick={onToggleLayers}
+          >
+            <FaLayerGroup />
+            <span className={styles.iconLabel}>Слои</span>
+          </button>
+
           <div className={styles.separator} />
 
           <button
             title="Отменить"
+            aria-label="Отменить"
             className={styles.toolButton}
             onClick={onUndo}
             disabled={!canUndo}
           >
             <FaUndo />
-            <span className={styles.toolLabel}>Назад</span>
+            <span className={styles.iconLabel}>Назад</span>
           </button>
           <button
             title="Повторить"
+            aria-label="Повторить"
             className={styles.toolButton}
             onClick={onRedo}
             disabled={!canRedo}
           >
             <FaRedo />
-            <span className={styles.toolLabel}>Вперед</span>
+            <span className={styles.iconLabel}>Вперёд</span>
           </button>
 
           <div className={styles.separator} />
 
           <button
             title="Очистить"
+            aria-label="Очистить холст"
             className={styles.toolButton}
             onClick={clearCanvas}
             disabled={isReadOnly}
           >
             <FaTrashAlt />
-            <span className={styles.toolLabel}>Сброс</span>
+            <span className={styles.iconLabel}>Очист.</span>
           </button>
 
           {/* Templates */}
@@ -336,7 +391,7 @@ function Toolbar({
               className={`${styles.actionButton} ${styles.templatesButton}`}
               onClick={() => { /* Toggle */ }}
             >
-              <span>Шаблоны</span>
+              <FaBorderAll />
             </button>
             {templateOptions.length > 0 && (
               <select
@@ -366,6 +421,7 @@ function Toolbar({
             disabled={savingTemplate || isReadOnly}
           >
             <FaSave />
+            <span className={styles.iconLabel}>Сохр.</span>
           </button>
         </div>
 
@@ -373,12 +429,11 @@ function Toolbar({
 
       {/* PROPERTIES PANEL (Popover on Mobile) */}
       <div
-        className={`${styles.centerGroup} ${isPropsPanelOpen ? styles.visible : ''}`}
+        className={`${styles.centerGroup} ${(isPropsPanelOpen || (selectedTool === 'image' && activeObject)) ? styles.visible : ''}`}
         ref={propsPanelRef}
       >
         {/* Mobile Header */}
         <div className={styles.popoverHeader}>
-          <span className={styles.popoverTitle}>{getToolName()}</span>
           <button
             className={styles.closeButton}
             onClick={() => onToggleProps?.(false)}
@@ -388,96 +443,180 @@ function Toolbar({
         </div>
 
         <div className={styles.popoverBody}>
-          {showThicknessControls && (
-            <div className={styles.brushControls}>
-              <input
-                type="range"
-                title={`Толщина: ${lineWidth}px`}
-                min="1"
-                max="50"
-                step="1"
-                value={lineWidth}
-                onChange={(e) => setLineWidth(Number(e.target.value))}
-                className={styles.lineWidthSlider}
-              />
-              <input
-                type="number"
-                min="1"
-                max="50"
-                value={lineWidth}
-                onChange={(e) => {
-                  const val = Math.max(1, Math.min(50, Number(e.target.value)));
-                  setLineWidth(val);
-                }}
-                className={styles.brushSizeInput}
-              />
+          {selectedTool === 'image' && activeObject ? (
+            <div className={styles.imageContextControls}>
+              <div className={styles.contextGroup}>
+                <button className={styles.toolButton} title="Дублировать изображение" aria-label="Дублировать изображение" onClick={onDuplicateObject}>
+                  <FaClone />
+                </button>
+                <button className={styles.toolButton} title="Удалить изображение" aria-label="Удалить изображение" onClick={onDeleteObject}>
+                  <FaTrashAlt />
+                </button>
+              </div>
+              <div className={styles.separator} />
+              <div className={styles.contextGroup}>
+                <button className={styles.toolButton} title="На передний план" aria-label="На передний план" onClick={() => onLayerOrder('front')}>
+                  <FaAngleDoubleUp />
+                </button>
+                <button className={styles.toolButton} title="На один слой вперед" aria-label="На один слой вперед" onClick={() => onLayerOrder('forward')}>
+                  <FaLevelUpAlt />
+                </button>
+                <button className={styles.toolButton} title="На один слой назад" aria-label="На один слой назад" onClick={() => onLayerOrder('backward')}>
+                  <FaLevelDownAlt />
+                </button>
+                <button className={styles.toolButton} title="На задний план" aria-label="На задний план" onClick={() => onLayerOrder('back')}>
+                  <FaAngleDoubleDown />
+                </button>
+              </div>
+              <div className={styles.separator} />
+              <div className={styles.contextGroup}>
+                <button className={styles.toolButton} title="Вписать в холст" aria-label="Вписать в холст" onClick={() => onApplyHelper('fit')}>
+                  <FaCompressArrowsAlt />
+                </button>
+                <button className={styles.toolButton} title="Заполнить холст" aria-label="Заполнить холст" onClick={() => onApplyHelper('fill')}>
+                  <FaExpandArrowsAlt />
+                </button>
+                <button className={styles.toolButton} title="Сбросить трансформацию" aria-label="Сбросить трансформацию" onClick={() => onApplyHelper('reset')}>
+                  <FaSyncAlt />
+                </button>
+              </div>
+              <div className={styles.separator} />
+              <div className={styles.contextGroup} style={{ gap: '8px' }}>
+                <FaAdjust title="Непрозрачность" style={{ color: 'var(--text-secondary)' }} />
+                <input
+                  type="range"
+                  min="0.01"
+                  max="1"
+                  step="0.01"
+                  value={activeObject.opacity ?? 1}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setOpacityInput(Math.round(val * 100).toString());
+                    onChangeOpacity(val);
+                  }}
+                  className={styles.lineWidthSlider}
+                  title="Непрозрачность слоя"
+                  aria-label="Непрозрачность слоя"
+                />
+                <div className={styles.opacityInputWrapper}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value={opacityInput}
+                    onChange={(e) => setOpacityInput(e.target.value)}
+                    onBlur={(e) => commitOpacity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitOpacity(e.target.value);
+                      if (e.key === 'Escape') {
+                        const pct = Math.max(1, Math.min(100, Math.round((activeObject.opacity ?? 1) * 100)));
+                        setOpacityInput(pct.toString());
+                        e.target.blur();
+                      }
+                    }}
+                    className={styles.opacityInput}
+                    aria-label="Прозрачность изображения"
+                    title="Прозрачность изображения"
+                  />
+                  <span>%</span>
+                </div>
+              </div>
             </div>
-          )}
-
-          {showColorControls && (
+          ) : (
             <>
-              {/* Responsive Palette (Inline on Mobile Popover) */}
-              <div className={styles.paletteWrapper} ref={paletteRef}>
-                {/* Palette Button usually toggles portal, but in popover we might want inline?
+              {(showThicknessControls && selectedTool !== 'image') && (
+                <div className={styles.brushControls}>
+                  <input
+                    type="range"
+                    title={`Толщина: ${lineWidth}px`}
+                    min="1"
+                    max="50"
+                    step="1"
+                    value={lineWidth}
+                    onChange={(e) => setLineWidth(Number(e.target.value))}
+                    className={styles.lineWidthSlider}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={lineWidth}
+                    onChange={(e) => {
+                      const val = Math.max(1, Math.min(50, Number(e.target.value)));
+                      setLineWidth(val);
+                    }}
+                    className={styles.brushSizeInput}
+                  />
+                </div>
+              )}
+
+              {showColorControls && (
+                <>
+                  {/* Responsive Palette (Inline on Mobile Popover) */}
+                  <div className={styles.paletteWrapper} ref={paletteRef}>
+                    {/* Palette Button usually toggles portal, but in popover we might want inline?
                     User request: "Pencil: Color swatches + Thickness"
                     Let's keep the palette button for full spectrum, or show swatches inline.
                     Code below shows inline palette on desktop, button on mobile.
                     Let's try to show swatches inline in the popover for better UX.
                 */}
 
-                {/* Always show inline swatches in Popover mode (if width allows) */}
-                <div className={styles.colorPalette}>
-                  <input
-                    type="color"
-                    title="Свой цвет"
-                    value={selectedColor}
-                    onChange={(e) => setSelectedColor(e.target.value)}
-                    className={styles.colorInput}
-                  />
-                  {colors.slice(0, 5).map((color) => (
-                    <button
-                      key={color}
-                      className={`${styles.colorSwatch} ${selectedColor.toUpperCase() === color.toUpperCase() ? styles.active : ""}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setSelectedColor(color)}
-                      aria-label={color}
-                    />
-                  ))}
-                </div>
-
-                {/* Palette Portal (Full Spectrum) */}
-                {showPalette && createPortal(
-                  <div
-                    className={styles.palettePopover}
-                    style={{
-                      position: 'fixed',
-                      top: palettePos.top,
-                      left: palettePos.left,
-                      zIndex: 10002
-                    }}
-                  >
+                    {/* Always show inline swatches in Popover mode (if width allows) */}
                     <div className={styles.colorPalette}>
-                      {colors.map((color) => (
+                      <input
+                        type="color"
+                        title="Свой цвет"
+                        value={selectedColor}
+                        onChange={(e) => setSelectedColor(e.target.value)}
+                        className={styles.colorInput}
+                      />
+                      {colors.slice(0, 5).map((color) => (
                         <button
                           key={color}
                           className={`${styles.colorSwatch} ${selectedColor.toUpperCase() === color.toUpperCase() ? styles.active : ""}`}
                           style={{ backgroundColor: color }}
-                          onClick={() => {
-                            setSelectedColor(color);
-                            setShowPalette(false);
-                          }}
+                          onClick={() => setSelectedColor(color)}
                           aria-label={color}
                         />
                       ))}
                     </div>
-                    <div
-                      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }}
-                      onClick={() => setShowPalette(false)}
-                    />
-                  </div>,
-                  document.body
-                )}
-              </div>
+
+                    {/* Palette Portal (Full Spectrum) */}
+                    {showPalette && createPortal(
+                      <div
+                        className={styles.palettePopover}
+                        style={{
+                          position: 'fixed',
+                          top: palettePos.top,
+                          left: palettePos.left,
+                          zIndex: 10002
+                        }}
+                      >
+                        <div className={styles.colorPalette}>
+                          {colors.map((color) => (
+                            <button
+                              key={color}
+                              className={`${styles.colorSwatch} ${selectedColor.toUpperCase() === color.toUpperCase() ? styles.active : ""}`}
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                setSelectedColor(color);
+                                setShowPalette(false);
+                              }}
+                              aria-label={color}
+                            />
+                          ))}
+                        </div>
+                        <div
+                          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }}
+                          onClick={() => setShowPalette(false)}
+                        />
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

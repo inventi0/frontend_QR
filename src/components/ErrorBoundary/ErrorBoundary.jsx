@@ -22,7 +22,7 @@ class ErrorBoundary extends React.Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     // Обновляем состояние чтобы показать fallback UI
     return { hasError: true };
   }
@@ -30,7 +30,7 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Логируем ошибку (можно отправить в Sentry)
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo,
@@ -59,7 +59,7 @@ class ErrorBoundary extends React.Component {
             <p className="error-boundary__message">
               Произошла ошибка при отображении этой страницы.
             </p>
-            
+
             {import.meta.env.DEV && this.state.error && (
               <details className="error-boundary__details">
                 <summary>Детали ошибки (только в development)</summary>
@@ -73,13 +73,13 @@ class ErrorBoundary extends React.Component {
             )}
 
             <div className="error-boundary__actions">
-              <button 
+              <button
                 className="error-boundary__button"
                 onClick={this.handleReset}
               >
                 Попробовать снова
               </button>
-              <button 
+              <button
                 className="error-boundary__button error-boundary__button--secondary"
                 onClick={() => window.location.href = '/'}
               >

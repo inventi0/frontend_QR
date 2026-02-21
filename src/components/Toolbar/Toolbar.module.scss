@@ -13,6 +13,14 @@
 
 /* --- Main Container --- */
 .toolbarContainer {
+  /* ── Shared Toolbar Tokens ── */
+  --tb-h: 48px;
+  --tb-r: 12px;
+  --tb-px: 6px;
+  --tb-py: 4px;
+  --tb-gap: 6px;
+  --tb-btn: 40px;
+
   /* Desktop: Normal Flow */
   position: relative;
   display: flex;
@@ -104,16 +112,16 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-m);
-  padding: 4px;
+  border-radius: var(--tb-r);
+  padding: var(--tb-py) var(--tb-px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tb-gap);
   transition: all 0.2s ease;
   margin: 0;
-  min-height: 48px;
+  min-height: var(--tb-h);
   flex: 0 1 auto;
   order: 1;
   /* Default order (Left Panel) */
@@ -141,7 +149,7 @@
 .rightGroup {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--tb-gap);
 }
 
 .rightGroup {
@@ -152,7 +160,6 @@
 .centerGroup {
   /* Desktop: Middle panel (Flow) */
   position: relative;
-  position: relative;
   order: 2;
   z-index: 105;
   pointer-events: auto;
@@ -162,13 +169,13 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-m);
-  padding: 4px 8px;
+  border-radius: var(--tb-r);
+  padding: var(--tb-py) var(--tb-px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  min-height: 48px;
+  min-height: var(--tb-h);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--tb-gap);
 
   @media (max-width: 768px) {
     /* Mobile: Properties Panel (Floating Popover) */
@@ -190,10 +197,18 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 
     padding: 12px;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
     z-index: 102;
     /* Above Toolbar */
 
@@ -267,12 +282,12 @@
   flex-direction: row;
   /* Desktop: Side-by-side */
   align-items: center;
-  gap: 12px;
+  gap: var(--tb-gap);
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    /* Mobile: Stacked */
-    align-items: stretch;
+    flex-direction: row;
+    /* Mobile: Scrollable Horizontal */
+    align-items: center;
   }
 }
 
@@ -283,10 +298,9 @@
   border: 1px solid transparent;
   color: var(--text-secondary);
   border-radius: var(--radius-s);
-  /* 8px (was 6px) */
   padding: 8px;
-  min-width: 40px;
-  min-height: 40px;
+  min-width: var(--tb-btn);
+  min-height: var(--tb-btn);
   font-size: 1.1rem;
   display: flex;
   align-items: center;
@@ -322,6 +336,21 @@
     svg {
       font-size: 1.2rem;
     }
+  }
+}
+
+/* Icon labels (visible only on mobile) */
+.iconLabel {
+  display: none;
+  font-size: 0.55rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+
+  @media (max-width: 768px) {
+    display: block;
   }
 }
 
@@ -474,6 +503,59 @@
   height: 24px;
   background: rgba(255, 255, 255, 0.2);
   margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* --- Image Context Controls (Horizontal Pill) --- */
+.imageContextControls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--tb-gap);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.contextGroup {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--tb-gap);
+  flex-shrink: 0;
+}
+
+.opacityInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+
+  span {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1;
+  }
+}
+
+.opacityInput {
+  width: 40px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  color: white;
+  border-radius: var(--radius-xs);
+  padding: 4px;
+  text-align: center;
+  font-size: 0.8rem;
+
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 /* --- Tool Labels for Mobile --- */

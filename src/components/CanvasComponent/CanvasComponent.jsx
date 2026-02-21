@@ -7,13 +7,11 @@ import React, {
   useCallback,
 } from "react";
 import styles from "./CanvasComponent.module.scss";
+import { getSession } from "../../utils/session";
 
 function hexToRgba(hex) {
   if (!hex) return [0, 0, 0, 0];
-  let r = 0,
-    g = 0,
-    b = 0,
-    a = 255;
+  let r = 0, g = 0, b = 0, a = 255;
   hex = hex.trim();
   if (hex.length === 4) {
     r = parseInt(hex[1] + hex[1], 16);
@@ -31,446 +29,439 @@ function hexToRgba(hex) {
   } else {
     return [0, 0, 0, 0];
   }
-  return [
-    isNaN(r) ? 0 : r,
-    isNaN(g) ? 0 : g,
-    isNaN(b) ? 0 : b,
-    isNaN(a) ? 255 : a,
-  ];
+  return [isNaN(r) ? 0 : r, isNaN(g) ? 0 : g, isNaN(b) ? 0 : b, isNaN(a) ? 255 : a];
 }
 
+// Generate unique ID
+const uid = () => Math.random().toString(36).substr(2, 9);
+
 const CanvasComponent = forwardRef(
-  ({ selectedColor, lineWidth, selectedTool, canEdit = true, onDirtyChange, onHistoryChange }, ref) => {
-    // --- Refs ---
-    const canvasRef = useRef(null);
-    const contextRef = useRef(null);
+  (
+    {
+      selectedColor,
+      lineWidth,
+      selectedTool,
+      canEdit = true,
+      onDirtyChange,
+      onHistoryChange,
+      onActiveObjectChange, // New callback
+    },
+    ref
+  ) => {
+    // --- DOM Refs ---
+    const containerRef = useRef(null);
+    const mainCanvasRef = useRef(null);
+    const overlayCanvasRef = useRef(null);
+
+    // --- Context Refs ---
+    const mainCtxRef = useRef(null);
+    const overlayCtxRef = useRef(null);
+    const paintCanvasRef = useRef(null); // Points to ACTIVE paint layer canvas
+    const paintCtxRef = useRef(null);    // Points to ACTIVE paint layer ctx
+
+    // --- State Refs (Avoid stale closures) ---
+    const layersRef = useRef([]); // Single source of truth for z-order
     const historyRef = useRef([]);
     const historyStepRef = useRef(-1);
-    const drawingDataRef = useRef(null);
+    const activePaintLayerIdRef = useRef(null); // Which paint layer receives drawing
+
+    // --- Multi-layer helpers (plain functions, not hooks) ---
+    const createPaintCanvas = (width, height) => {
+      const c = document.createElement('canvas');
+      c.width = width || 1;
+      c.height = height || 1;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      return { canvas: c, ctx };
+    };
+
+    const syncActivePaintRefs = () => {
+      const activeId = activePaintLayerIdRef.current;
+      const paintLayer = layersRef.current.find(l => l.type === 'paint' && l.id === activeId)
+        || layersRef.current.find(l => l.type === 'paint');
+      if (paintLayer) {
+        paintCanvasRef.current = paintLayer.canvas;
+        paintCtxRef.current = paintLayer.ctx;
+        activePaintLayerIdRef.current = paintLayer.id;
+      }
+    };
+
+    // Drawing state
+    const isDrawingRef = useRef(false);
+    const lastPosRef = useRef({ x: 0, y: 0 });
     const shapeStartPosRef = useRef(null);
-    const canvasSnapshotRef = useRef(null);
-    const objectsRef = useRef([]);
-    const dragOffsetRef = useRef({ x: 0, y: 0 });
-    const draggingObjectRef = useRef(null);
+    const shapeSnapshotRef = useRef(null); // ImageData for temp shape drawing in paint layer
 
-    // --- State ---
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [isManipulatingShape, setIsManipulatingShape] = useState(false);
-    const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
-    const [, setObjects] = useState([]); // Force update helper for objects
-    const [activeObjectId, setActiveObjectId] = useState(null);
+    // Object Editing State
+    const activeLayerIdRef = useRef(null);
+    const transformActionRef = useRef(null); // 'move', 'resize-nw', 'rotate', etc.
+    const transformStartRef = useRef(null); // { x, y, layerSnapshot }
+    const pointersRef = useRef(new Map()); // For multi-touch
 
-    // --- Constants ---
-    const MAX_HISTORY = 20;
+    // --- React State (Triggers re-renders for UI updates if needed) ---
+    const [, forceUpdate] = useState({});
+    const triggerUpdate = useCallback(() => forceUpdate({}), []);
 
-    // --- History (Undo/Redo) ---
-    // Defined here to avoid TDZ in clearCanvas
+    // Let parent know when active layer changes
+    const setActiveLayerId = useCallback((id) => {
+      activeLayerIdRef.current = id;
+      const layer = id ? layersRef.current.find(l => l.id === id) : null;
+      // If selecting a paint layer, also make it the active draw target
+      if (layer?.type === 'paint') {
+        activePaintLayerIdRef.current = id;
+        syncActivePaintRefs();
+      }
+      onActiveObjectChange?.(layer || null);
+      renderOverlay();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onActiveObjectChange]);
+
+    // --- Settings helpers ---
+    const applyDrawSettings = useCallback((ctx) => {
+      if (!ctx) return;
+      const isEraser = selectedTool === "eraser";
+
+      ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
+      ctx.strokeStyle = isEraser ? "rgba(0,0,0,1)" : selectedColor;
+      ctx.fillStyle = isEraser ? "rgba(0,0,0,1)" : selectedColor;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    }, [selectedColor, lineWidth, selectedTool]);
+
+    // --- Rendering Pipeline ---
+    const fillCanvasBackground = useCallback((ctx, width, height, bgColor = null) => {
+      const color = bgColor || getComputedStyle(document.documentElement).getPropertyValue("--canvas-background").trim() || "#2a2a2e";
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }, []);
+
+    const renderScene = useCallback((ctxToRenderTo = mainCtxRef.current, skipBackground = false) => {
+      const canvas = mainCanvasRef.current;
+      if (!canvas || !ctxToRenderTo) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const logicalWidth = canvas.width / dpr;
+      const logicalHeight = canvas.height / dpr;
+
+      ctxToRenderTo.save();
+      ctxToRenderTo.clearRect(0, 0, logicalWidth, logicalHeight);
+
+      if (!skipBackground) {
+        fillCanvasBackground(ctxToRenderTo, logicalWidth, logicalHeight);
+      }
+
+      // Draw layers bottom to top
+      layersRef.current.forEach((layer) => {
+        if (!layer.visible) return;
+
+        if (layer.type === "paint") {
+          if (layer.canvas) {
+            ctxToRenderTo.drawImage(layer.canvas, 0, 0, logicalWidth, logicalHeight);
+          }
+        } else if (layer.type === "image" && layer.imgEl) {
+          ctxToRenderTo.save();
+          // Translate to center of image, rotate, draw, restore
+          ctxToRenderTo.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
+          ctxToRenderTo.rotate(layer.rotation * Math.PI / 180);
+          ctxToRenderTo.globalAlpha = layer.opacity ?? 1;
+          ctxToRenderTo.drawImage(
+            layer.imgEl,
+            -layer.w / 2,
+            -layer.h / 2,
+            layer.w,
+            layer.h
+          );
+          ctxToRenderTo.restore();
+        }
+      });
+
+      ctxToRenderTo.restore();
+    }, [fillCanvasBackground]);
+
+    // Transform Helpers for math
+    const rotatePoint = (px, py, cx, cy, angleDeg) => {
+      const rad = angleDeg * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const nx = cos * (px - cx) - sin * (py - cy) + cx;
+      const ny = sin * (px - cx) + cos * (py - cy) + cy;
+      return { x: nx, y: ny };
+    };
+
+    // Render Overlay (Handles, bounding box, cursors)
+    const renderOverlay = useCallback(() => {
+      const canvas = overlayCanvasRef.current;
+      const ctx = overlayCtxRef.current;
+      const baseCanvas = mainCanvasRef.current;
+      const wrapperEl = containerRef.current;
+      if (!canvas || !ctx || !baseCanvas || !wrapperEl) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const logicalWidth = canvas.width / dpr;
+      const logicalHeight = canvas.height / dpr;
+
+      ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+
+      // Determine precise size for the cursor based on the CSS coordinate ratio
+      const rect = wrapperEl.getBoundingClientRect();
+      const scaleX = rect.width > 0 ? baseCanvas.width / rect.width : dpr;
+      // The drawn line diameter on backing store is lineWidth. 
+      // To see the EXACT same diameter on screen in CSS pixels, divide by scaleX.
+      const cssRadius = (lineWidth / scaleX) / 2;
+
+      // 1. Draw Brush Preview
+      if ((selectedTool === "pen" || selectedTool === "eraser") && lastPosRef.current) {
+        ctx.beginPath();
+        ctx.arc(lastPosRef.current.cssX, lastPosRef.current.cssY, Math.max(0.1, cssRadius), 0, Math.PI * 2);
+        ctx.strokeStyle = selectedTool === "eraser" ? "rgba(255,255,255,0.8)" : selectedColor;
+        ctx.lineWidth = 1 / dpr;
+        ctx.stroke();
+
+        if (selectedTool === "eraser") {
+          ctx.beginPath();
+          // Inner circle for eraser, ensure it doesn't have a negative radius
+          ctx.arc(lastPosRef.current.cssX, lastPosRef.current.cssY, Math.max(0.1, cssRadius - 1), 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(0,0,0,0.8)";
+          ctx.stroke();
+        }
+      }
+
+      // 2. Draw Selection Box & Handles
+      if (selectedTool === "image" && activeLayerIdRef.current) {
+        const layer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
+        if (layer && layer.type === "image") {
+          ctx.save();
+          // Transform to image local space for easy drawing
+          ctx.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
+          ctx.rotate(layer.rotation * Math.PI / 180);
+
+          // Bounding Box
+          ctx.strokeStyle = "#5fd6ff";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
+
+          // Handle size
+          const hs = 8;
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "#5fd6ff";
+          ctx.lineWidth = 1.5;
+
+          const drawHandle = (hx, hy) => {
+            ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+            ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs);
+          };
+
+          // 8 Corner/Edge Handles
+          const hw = layer.w / 2;
+          const hh = layer.h / 2;
+          drawHandle(-hw, -hh); // NW
+          drawHandle(0, -hh);   // N
+          drawHandle(hw, -hh);  // NE
+          drawHandle(hw, 0);    // E
+          drawHandle(hw, hh);   // SE
+          drawHandle(0, hh);    // S
+          drawHandle(-hw, hh);  // SW
+          drawHandle(-hw, 0);   // W
+
+          // Rotation Handle
+          ctx.beginPath();
+          ctx.moveTo(0, -hh);
+          ctx.lineTo(0, -hh - 25);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, -hh - 25, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Live Size Text (Only while scaling/rotating)
+          if (transformActionRef.current && transformActionRef.current.startsWith('resize')) {
+            ctx.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))';
+            ctx.fillStyle = "white";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`${Math.round(layer.w)} × ${Math.round(layer.h)}`, 0, hh + 20);
+          } else if (transformActionRef.current === 'rotate') {
+            ctx.filter = 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))';
+            ctx.fillStyle = "white";
+            ctx.font = "12px sans-serif";
+            ctx.textAlign = "center";
+            let displayRot = Math.round(layer.rotation % 360);
+            if (displayRot < 0) displayRot += 360;
+            ctx.fillText(`${displayRot}°`, 20, -hh - 25);
+          }
+
+          ctx.restore();
+
+          // Draw dimension tooltip if actively resizing
+          if (transformActionRef.current && transformActionRef.current.startsWith('resize')) {
+            ctx.save();
+            ctx.font = "12px sans-serif";
+            const text = `${Math.round(layer.w)} × ${Math.round(layer.h)}`;
+            const textMetrics = ctx.measureText(text);
+            const tw = textMetrics.width;
+            const th = 12;
+
+            // Project top center offset into global rotated space
+            const pt = rotatePoint(
+              layer.x + layer.w / 2, layer.y - 20,
+              layer.x + layer.w / 2, layer.y + layer.h / 2,
+              layer.rotation
+            );
+
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.beginPath();
+            ctx.roundRect(pt.x - tw / 2 - 8, pt.y - th / 2 - 6, tw + 16, th + 12, 4);
+            ctx.fill();
+
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, pt.x, pt.y);
+            ctx.restore();
+          }
+        }
+      }
+    }, [selectedTool, selectedColor, lineWidth]);
+
+    // Use hit-testing to update cursor based on mouse position
+    const updateCursor = useCallback((pos) => {
+      if (!overlayCanvasRef.current) return;
+
+      const setCursor = (cur) => {
+        if (overlayCanvasRef.current.style.cursor !== cur) {
+          overlayCanvasRef.current.style.cursor = cur;
+        }
+      };
+
+      if (!canEdit) {
+        setCursor("default");
+        return;
+      }
+
+      if (selectedTool === "pen" || selectedTool === "eraser") {
+        setCursor("none"); // Hide default cursor, we draw the preview
+        return;
+      }
+
+      if (selectedTool === "bucket") {
+        // Using a paint bucket icon or crosshair
+        setCursor("crosshair");
+        return;
+      }
+
+      if (selectedTool === "rectangle" || selectedTool === "circle") {
+        setCursor("crosshair");
+        return;
+      }
+
+      if (selectedTool === "image") {
+        if (!activeLayerIdRef.current || transformActionRef.current) {
+          if (!transformActionRef.current) setCursor("default");
+          return;
+        }
+
+        const layer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
+        if (!layer || layer.type !== "image") {
+          setCursor("default");
+          return;
+        }
+
+        // Hit testing Handles
+        const action = getTransformAction(pos, layer);
+        if (action === "rotate") setCursor("grab");
+        else if (action === "resize-nw" || action === "resize-se") setCursor("nwse-resize");
+        else if (action === "resize-ne" || action === "resize-sw") setCursor("nesw-resize");
+        else if (action === "resize-n" || action === "resize-s") setCursor("ns-resize");
+        else if (action === "resize-e" || action === "resize-w") setCursor("ew-resize");
+        else if (action === "move") setCursor("move");
+        else setCursor("default");
+      }
+    }, [selectedTool, canEdit]);
+
+    // --- Core History ---
     const saveSnapshot = useCallback(() => {
-      const canvas = canvasRef.current;
-      const context = contextRef.current;
-      if (!canvas || !context) return;
+      // Gather paint data from all paint layers
+      const paintDataMap = {};
+      for (const layer of layersRef.current) {
+        if (layer.type === 'paint' && layer.canvas && layer.ctx) {
+          try {
+            paintDataMap[layer.id] = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+          } catch { /* ignore */ }
+        }
+      }
 
-      let rasterData;
-      try {
-        rasterData = context.getImageData(0, 0, canvas.width, canvas.height);
-      } catch { return; }
-
-      const objectsData = objectsRef.current.map(obj => ({ ...obj }));
+      // Clone layers without canvas/ctx refs
+      const clonedLayers = layersRef.current.map(l => {
+        const clone = { ...l };
+        delete clone.canvas;
+        delete clone.ctx;
+        return clone;
+      });
 
       if (historyStepRef.current < historyRef.current.length - 1) {
         historyRef.current = historyRef.current.slice(0, historyStepRef.current + 1);
       }
 
-      historyRef.current.push({ raster: rasterData, objects: objectsData });
+      historyRef.current.push({
+        paintDataMap,
+        layers: clonedLayers,
+        activePaintLayerId: activePaintLayerIdRef.current
+      });
 
+      const MAX_HISTORY = 20;
       if (historyRef.current.length > MAX_HISTORY) {
         historyRef.current.shift();
       } else {
         historyStepRef.current++;
       }
 
-      // Notify parent
       onDirtyChange?.(true);
       onHistoryChange?.();
     }, [onDirtyChange, onHistoryChange]);
-
-    const fillCanvasBackground = useCallback((context, canvas, bgColor = null) => {
-      if (!canvas || !context) return;
-      const dpr = window.devicePixelRatio || 1;
-      const color =
-        bgColor ||
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--canvas-background")
-          .trim();
-      const savedOperation = context.globalCompositeOperation;
-      context.globalCompositeOperation = "source-over";
-      context.fillStyle = color;
-      context.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-      context.globalCompositeOperation = savedOperation;
-    }, []);
-
-    const getCoords = useCallback(
-      (event) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
-        const rect = canvas.getBoundingClientRect();
-        let clientX, clientY;
-        if (event.touches && event.touches.length > 0) {
-          clientX = event.touches[0].clientX;
-          clientY = event.touches[0].clientY;
-        } else if (event.clientX !== undefined) {
-          clientX = event.clientX;
-          clientY = event.clientY;
-        } else {
-          return lastPosition;
-        }
-        return { x: clientX - rect.left, y: clientY - rect.top };
-      },
-      [lastPosition]
-    );
-
-    const drawRectangle = useCallback((context, startX, startY, endX, endY) => {
-      if (!context) return;
-      context.strokeRect(startX, startY, endX - startX, endY - startY);
-    }, []);
-
-    const drawCircle = useCallback((context, startX, startY, endX, endY) => {
-      if (!context) return;
-      const radiusX = Math.abs(endX - startX) / 2;
-      const radiusY = Math.abs(endY - startY) / 2;
-      if (radiusX < 0.5 || radiusY < 0.5) return;
-      const centerX = Math.min(startX, endX) + radiusX;
-      const centerY = Math.min(startY, endY) + radiusY;
-      context.beginPath();
-      context.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-      context.stroke();
-    }, []);
-
-    const applyCurrentSettings = useCallback(
-      (context) => {
-        if (!context) return;
-        const isEraser = selectedTool === "eraser";
-
-        if (isEraser) {
-          context.globalCompositeOperation = "source-over";
-          context.strokeStyle = "#000000";
-          context.fillStyle = "#000000";
-        } else {
-          context.globalCompositeOperation = "source-over";
-          context.strokeStyle = selectedColor;
-          context.fillStyle = selectedColor;
-        }
-
-        context.lineWidth = lineWidth;
-        context.lineCap = "round";
-        context.lineJoin = "round";
-      },
-      [selectedColor, lineWidth, selectedTool]
-    );
-
-    const drawObjects = useCallback(
-      (context) => {
-        const dpr = window.devicePixelRatio || 1;
-        objectsRef.current.forEach((obj) => {
-          if (!obj.image) return;
-          context.drawImage(obj.image, obj.x, obj.y, obj.width, obj.height);
-          if (obj.id === activeObjectId) {
-            context.save();
-            context.strokeStyle = "#7ad7ff";
-            context.lineWidth = 1.5 / dpr;
-            context.strokeRect(obj.x, obj.y, obj.width, obj.height);
-            context.restore();
-          }
-        });
-      },
-      [activeObjectId]
-    );
-
-    const redrawCanvas = useCallback(
-      (initialSetup = false) => {
-        // console.log("redrawCanvas called", { initialSetup, hasDrawing: !!drawingDataRef.current });
-        const canvas = canvasRef.current;
-        const context = contextRef.current;
-        if (!canvas || !context) return;
-        fillCanvasBackground(context, canvas);
-        if (drawingDataRef.current) {
-          try {
-            context.putImageData(drawingDataRef.current, 0, 0);
-          } catch (e) {
-            console.error(e);
-          }
-          if (initialSetup) {
-            try {
-              drawingDataRef.current = context.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-              );
-            } catch {
-              // ignore
-            }
-          }
-        }
-        drawObjects(context);
-        applyCurrentSettings(context);
-      },
-      [applyCurrentSettings, fillCanvasBackground, drawObjects]
-    );
-
-    const floodFill = useCallback(
-      (startX, startY) => {
-        const canvas = canvasRef.current;
-        const context = contextRef.current;
-        if (!canvas || !context) return;
-        const dpr = window.devicePixelRatio || 1;
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        startX = Math.floor(startX * dpr);
-        startY = Math.floor(startY * dpr);
-        if (
-          startX < 0 ||
-          startX >= canvasWidth ||
-          startY < 0 ||
-          startY >= canvasHeight
-        )
-          return;
-
-        let imageData;
-        try {
-          imageData = context.getImageData(0, 0, canvasWidth, canvasHeight);
-        } catch (e) {
-          console.error("Flood fill getImageData error:", e);
-          return;
-        }
-        const data = imageData.data;
-        const pixelIndex = (startY * canvasWidth + startX) * 4;
-        const targetColor = [
-          data[pixelIndex],
-          data[pixelIndex + 1],
-          data[pixelIndex + 2],
-          data[pixelIndex + 3],
-        ];
-        const fillColorRgba = hexToRgba(selectedColor);
-        if (!fillColorRgba) return;
-        const fillColor = [
-          fillColorRgba[0],
-          fillColorRgba[1],
-          fillColorRgba[2],
-          fillColorRgba[3],
-        ];
-        if (targetColor.every((val, i) => val === fillColor[i])) return;
-
-        const queue = [[startX, startY]];
-        const visited = new Set([`${startX},${startY}`]);
-        let iterations = 0;
-        const maxIterations = canvasWidth * canvasHeight * 1.5;
-
-        while (queue.length > 0 && iterations < maxIterations) {
-          iterations++;
-          const [x, y] = queue.shift();
-          const currentIndex = (y * canvasWidth + x) * 4;
-          data[currentIndex] = fillColor[0];
-          data[currentIndex + 1] = fillColor[1];
-          data[currentIndex + 2] = fillColor[2];
-          data[currentIndex + 3] = fillColor[3];
-          [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]].forEach(
-            ([nx, ny]) => {
-              if (nx >= 0 && nx < canvasWidth && ny >= 0 && ny < canvasHeight) {
-                const key = `${nx},${ny}`;
-                if (!visited.has(key)) {
-                  const neighborIndex = (ny * canvasWidth + nx) * 4;
-                  if (
-                    data[neighborIndex] === targetColor[0] &&
-                    data[neighborIndex + 1] === targetColor[1] &&
-                    data[neighborIndex + 2] === targetColor[2] &&
-                    data[neighborIndex + 3] === targetColor[3]
-                  ) {
-                    visited.add(key);
-                    queue.push([nx, ny]);
-                  }
-                }
-              }
-            }
-          );
-        }
-        if (iterations >= maxIterations)
-          console.warn("Flood fill iteration limit reached.");
-        context.putImageData(imageData, 0, 0);
-        try {
-          drawingDataRef.current = context.getImageData(
-            0,
-            0,
-            canvasWidth,
-            canvasHeight
-          );
-        } catch (e) {
-          console.error("Error saving drawing data after fill:", e);
-          drawingDataRef.current = null;
-        }
-      },
-      [selectedColor]
-    );
-
-    const clearCanvas = useCallback(() => {
-      const ctx = contextRef.current;
-      const cnv = canvasRef.current;
-      if (ctx && cnv) {
-        // Hard Reset: Clear everything and wipe history
-        ctx.clearRect(0, 0, cnv.width, cnv.height);
-
-        drawingDataRef.current = null;
-        canvasSnapshotRef.current = null;
-        objectsRef.current = [];
-        setObjects([]);
-        setActiveObjectId(null);
-
-        // Reset History
-        historyRef.current = [];
-        historyStepRef.current = -1;
-
-        // Initial Snapshot (Empty)
-        saveSnapshot();
-        onHistoryChange?.();
-      }
-    }, [saveSnapshot, onHistoryChange]);
-
-    const downloadImage = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      redrawCanvas();
-      const bgColor = getComputedStyle(document.documentElement)
-        .getPropertyValue("--canvas-background")
-        .trim();
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-      tempCtx.fillStyle = bgColor;
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-      tempCtx.drawImage(canvas, 0, 0);
-      try {
-        const dataUrl = tempCanvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = "paint-again-drawing.png";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error("Download failed:", error);
-        alert("Could not download image.");
-      }
-    }, [redrawCanvas]);
-
-    const toBlob = useCallback(async () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      redrawCanvas();
-      const bgColor = getComputedStyle(document.documentElement)
-        .getPropertyValue("--canvas-background")
-        .trim();
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext("2d");
-      tempCtx.fillStyle = bgColor;
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-      tempCtx.drawImage(canvas, 0, 0);
-      return new Promise((resolve) =>
-        tempCanvas.toBlob((blob) => resolve(blob), "image/png")
-      );
-    }, [redrawCanvas]);
-
-    const addImageObject = useCallback(
-      (image) => {
-        const canvas = canvasRef.current;
-        const context = contextRef.current;
-        if (!canvas || !context) return;
-        const dpr = window.devicePixelRatio || 1;
-
-        // Calculate centered position
-        const logicalWidth = canvas.width / dpr;
-        const logicalHeight = canvas.height / dpr;
-        const maxWidth = logicalWidth * 0.8; // 80% of canvas
-        const maxHeight = logicalHeight * 0.8;
-        const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
-        const width = image.width * ratio;
-        const height = image.height * ratio;
-        const x = (logicalWidth - width) / 2;
-        const y = (logicalHeight - height) / 2;
-
-        // Rasterize Image immediately (so it can be erased)
-        context.save();
-        context.globalCompositeOperation = "source-over";
-        context.drawImage(image, x, y, width, height);
-        context.restore();
-
-        // Update Drawing Data
-        try {
-          drawingDataRef.current = context.getImageData(0, 0, canvas.width, canvas.height);
-        } catch (e) {
-          console.error("Error saving rasterized image:", e);
-        }
-
-        // Save history
-        saveSnapshot();
-        // redrawCanvas(); // Ensure state consistency
-      },
-      [saveSnapshot]
-    );
-
-    const loadFromFile = useCallback(
-      (file) => {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => addImageObject(img);
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      },
-      [addImageObject]
-    );
-
-    const loadFromUrl = useCallback(
-      (url) => {
-        if (!url) return;
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => addImageObject(img);
-        img.src = url;
-      },
-      [addImageObject]
-    );
 
     const restoreState = useCallback((stepIndex) => {
       const state = historyRef.current[stepIndex];
       if (!state) return;
 
-      const canvas = canvasRef.current;
-      const context = contextRef.current;
-      if (!canvas || !context) return;
+      const mainCanvas = mainCanvasRef.current;
 
-      // Restore Raster
-      try {
-        context.putImageData(state.raster, 0, 0);
-        drawingDataRef.current = state.raster; // Sync drawing ref
-      } catch (e) {
-        console.error("Failed to restore raster state:", e);
+      // Restore layers (recreate canvas/ctx for paint layers)
+      layersRef.current = state.layers.map(l => {
+        const restored = { ...l };
+        if (l.type === 'paint') {
+          const { canvas, ctx } = createPaintCanvas(
+            mainCanvas?.width || 1,
+            mainCanvas?.height || 1
+          );
+          restored.canvas = canvas;
+          restored.ctx = ctx;
+          const pData = state.paintDataMap?.[l.id];
+          if (pData) {
+            try { ctx.putImageData(pData, 0, 0); } catch { /* ignore */ }
+          }
+        }
+        return restored;
+      });
+
+      // Restore active paint layer
+      if (state.activePaintLayerId) {
+        activePaintLayerIdRef.current = state.activePaintLayerId;
+      }
+      syncActivePaintRefs();
+
+      // Ensure the active layer still exists, otherwise null it
+      if (!layersRef.current.find(l => l.id === activeLayerIdRef.current)) {
+        setActiveLayerId(null);
       }
 
-      // Restore Objects
-      const restoredObjects = state.objects.map(savedObj => ({ ...savedObj }));
-      objectsRef.current = restoredObjects;
-      setObjects(restoredObjects);
-
-      // Redraw everything
-      redrawCanvas();
-
+      renderScene();
+      renderOverlay();
+      triggerUpdate();
       onHistoryChange?.();
-    }, [redrawCanvas, onHistoryChange]);
+    }, [renderScene, renderOverlay, triggerUpdate, setActiveLayerId, onHistoryChange]);
 
     const undo = useCallback(() => {
       if (historyStepRef.current > 0) {
@@ -486,318 +477,1184 @@ const CanvasComponent = forwardRef(
       }
     }, [restoreState]);
 
-    const canUndo = () => historyStepRef.current > 0;
-    const canRedo = () => historyStepRef.current < historyRef.current.length - 1;
 
+    // --- Layer & Object Creation ---
+    const initPaintLayer = useCallback(() => {
+      if (!layersRef.current.some(l => l.type === 'paint')) {
+        const mcvs = mainCanvasRef.current;
+        const { canvas, ctx } = createPaintCanvas(mcvs?.width || 1, mcvs?.height || 1);
+        const layer = { id: 'paint-layer-0', type: 'paint', name: 'Слой 1', visible: true, canvas, ctx };
+        layersRef.current.push(layer);
+        activePaintLayerIdRef.current = layer.id;
+        syncActivePaintRefs();
+      } else {
+        syncActivePaintRefs();
+      }
+    }, []);
 
+    const addImageLayer = useCallback((imgEl) => {
+      const canvas = mainCanvasRef.current;
+      if (!canvas) return;
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        clearCanvas: () => {
-          clearCanvas();
-          saveSnapshot(); // Save cleared state
-        },
-        downloadImage,
-        toBlob,
-        loadFromFile: (file) => {
-          loadFromFile(file);
-          // We need to wait for image load... loadFromFile is async in effect.
-          // For now, we rely on the user adding it, which might not be immediate history.
-          // Actually, `addImageObject` calls `redrawCanvas`. We should hook there.
-        },
-        loadFromUrl,
-        addImageObject: (img) => {
-          addImageObject(img);
-          setTimeout(saveSnapshot, 50); // Snapshot after object add
-        },
-        undo,
-        redo,
-        canUndo,
-        canRedo
-      }),
-      [clearCanvas, downloadImage, toBlob, loadFromFile, loadFromUrl, addImageObject, undo, redo, saveSnapshot]
-    );
+      const dpr = window.devicePixelRatio || 1;
+      const padding = 16;
+      const logicalW = canvas.width / dpr;
+      const logicalH = canvas.height / dpr;
 
-    // --- Drawing handlers with object dragging ---
-    const startDrawing = useCallback(
-      (event) => {
-        // Fix: Remove event.button > 0 check to allow touch/stylus
-        if (!contextRef.current) return;
-        const coords = getCoords(event);
+      const maxW = logicalW - padding * 2;
+      const maxH = logicalH - padding * 2;
 
-        if (selectedTool === "image") {
-          // Objects are now rasterized, so selection logic removed or modified
-          // If you want to keep "Move" for *just added* items, it's complex with rasterization.
-          // For now, disabling object selection as images are pixels.
-          /* 
-          const hit = ... 
-          */
-          return; // No object manipulation
+      // Center and contain without upscaling
+      const scale = Math.min(1, maxW / imgEl.naturalWidth, maxH / imgEl.naturalHeight);
+      const w = imgEl.naturalWidth * scale;
+      const h = imgEl.naturalHeight * scale;
+      const x = (logicalW - w) / 2;
+      const y = (logicalH - h) / 2;
+
+      const newLayer = {
+        id: uid(),
+        type: "image",
+        src: imgEl.src,
+        imgEl: imgEl,
+        x, y, w, h,
+        rotation: 0,
+        opacity: 1,
+        naturalW: imgEl.naturalWidth,
+        naturalH: imgEl.naturalHeight,
+        visible: true
+      };
+
+      layersRef.current.push(newLayer);
+      setActiveLayerId(newLayer.id);
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate, setActiveLayerId]);
+
+    const loadFromFile = useCallback((file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => addImageLayer(img);
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }, [addImageLayer]);
+
+    const loadFromUrl = useCallback(async (url) => {
+      if (!url) throw new Error('URL не указан');
+
+      // Try fetch with auth token (handles CORS + protected assets)
+      let objectUrl = null;
+      let usedBlob = false;
+      try {
+        const session = getSession();
+        const headers = {};
+        if (session?.accessToken) {
+          headers['Authorization'] = `Bearer ${session.accessToken}`;
         }
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        usedBlob = true;
+      } catch {
+        // Fallback: try direct img.src (for external/public URLs)
+        objectUrl = url;
+        usedBlob = false;
+      }
 
-        if (!canEdit) return;
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          addImageLayer(img);
+          if (usedBlob) URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+        img.onerror = () => {
+          if (usedBlob) URL.revokeObjectURL(objectUrl);
+          reject(new Error('Не удалось загрузить изображение'));
+        };
+        img.src = objectUrl;
+      });
+    }, [addImageLayer]);
 
-        const context = contextRef.current;
-        applyCurrentSettings(context);
-        setIsDrawing(true);
-        setLastPosition(coords);
-
-        if (selectedTool === "pen" || selectedTool === "eraser") {
-          context.beginPath();
-          context.moveTo(coords.x, coords.y);
-        } else if (selectedTool === "rectangle" || selectedTool === "circle") {
-          setIsManipulatingShape(true);
-          shapeStartPosRef.current = coords;
-          try {
-            canvasSnapshotRef.current = context.getImageData(
-              0,
-              0,
-              canvasRef.current.width,
-              canvasRef.current.height
-            );
-          } catch (e) {
-            console.error("Snapshot error:", e);
-            canvasSnapshotRef.current = null;
-            setIsManipulatingShape(false);
+    // --- Transform Logic helpers ---
+    const getHitLayer = (pos) => {
+      // Search top to bottom
+      for (let i = layersRef.current.length - 1; i >= 0; i--) {
+        const l = layersRef.current[i];
+        if (l.type === "image" && l.visible) {
+          // Local hit test matching standard rotation
+          const local = rotatePoint(pos.cssX, pos.cssY, l.x + l.w / 2, l.y + l.h / 2, -l.rotation);
+          if (local.x >= l.x && local.x <= l.x + l.w && local.y >= l.y && local.y <= l.y + l.h) {
+            return l;
           }
-        } else if (selectedTool === "bucket") {
-          floodFill(coords.x, coords.y);
-          setIsDrawing(false);
         }
-      },
-      [applyCurrentSettings, getCoords, selectedTool, floodFill, canEdit]
-    );
+      }
+      return null;
+    };
 
-    const draw = useCallback(
-      (event) => {
-        if (selectedTool === "image" && draggingObjectRef.current) {
-          const coords = getCoords(event);
-          const objId = draggingObjectRef.current;
-          objectsRef.current = objectsRef.current.map((obj) =>
-            obj.id === objId
-              ? {
-                ...obj,
-                x: coords.x - dragOffsetRef.current.x,
-                y: coords.y - dragOffsetRef.current.y,
-              }
-              : obj
-          );
-          setObjects(objectsRef.current);
-          redrawCanvas();
-          return;
+    const getTransformAction = (pos, layer) => {
+      const hs = 12; // Handle hit size (slightly larger for touch)
+      const local = rotatePoint(pos.cssX, pos.cssY, layer.x + layer.w / 2, layer.y + layer.h / 2, -layer.rotation);
+
+      // Coordinates in local space relative to center
+      const lx = local.x - (layer.x + layer.w / 2);
+      const ly = local.y - (layer.y + layer.h / 2);
+      const hw = layer.w / 2;
+      const hh = layer.h / 2;
+
+      const inBox = (px, py, bx, by) => Math.abs(px - bx) <= hs / 2 && Math.abs(py - by) <= hs / 2;
+
+      if (inBox(lx, ly, 0, -hh - 25)) return "rotate";
+      if (inBox(lx, ly, -hw, -hh)) return "resize-nw";
+      if (inBox(lx, ly, hw, -hh)) return "resize-ne";
+      if (inBox(lx, ly, hw, hh)) return "resize-se";
+      if (inBox(lx, ly, -hw, hh)) return "resize-sw";
+
+      if (inBox(lx, ly, 0, -hh)) return "resize-n";
+      if (inBox(lx, ly, 0, hh)) return "resize-s";
+      if (inBox(lx, ly, hw, 0)) return "resize-e";
+      if (inBox(lx, ly, -hw, 0)) return "resize-w";
+
+      if (lx >= -hw && lx <= hw && ly >= -hh && ly <= hh) return "move";
+
+      return null;
+    };
+
+    // --- Input Handlers ---
+    const getCanvasPoint = useCallback((e) => {
+      const baseCanvas = mainCanvasRef.current;
+      const overlayCanvas = overlayCanvasRef.current;
+      const wrapperEl = containerRef.current;
+      if (!baseCanvas || !overlayCanvas || !wrapperEl) return lastPosRef.current || null;
+
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      }
+
+      const rect = wrapperEl.getBoundingClientRect();
+      const cssX = clientX - rect.left;
+      const cssY = clientY - rect.top;
+
+      let scaleX = 1;
+      let scaleY = 1;
+      if (rect.width > 0 && rect.height > 0) {
+        scaleX = baseCanvas.width / rect.width;
+        scaleY = baseCanvas.height / rect.height;
+      }
+
+      return {
+        x: cssX * scaleX,
+        y: cssY * scaleY,
+        cssX,
+        cssY
+      };
+    }, [containerRef]);
+
+    const onPointerDown = useCallback((e) => {
+      if (!canEdit) return;
+      const pos = getCanvasPoint(e);
+      if (!pos) return;
+      lastPosRef.current = pos;
+
+      // Multitouch gesture logic
+      if (e.touches) {
+        for (let i = 0; i < e.touches.length; i++) {
+          pointersRef.current.set(e.touches[i].identifier, {
+            x: e.touches[i].clientX,
+            y: e.touches[i].clientY
+          });
+        }
+      }
+
+      if (selectedTool === "image") {
+        // Check handles of active layer first
+        let action = null;
+        let activeLayer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
+
+        if (activeLayer) {
+          action = getTransformAction(pos, activeLayer);
         }
 
-        if (!isDrawing || !contextRef.current || !canEdit) return;
-        const context = contextRef.current;
-        const coords = getCoords(event);
+        if (action) {
+          transformActionRef.current = action;
 
-        if (
-          (selectedTool === "pen" || selectedTool === "eraser") &&
-          !isManipulatingShape
-        ) {
-          context.lineTo(coords.x, coords.y);
-          context.stroke();
-          setLastPosition(coords);
-        } else if (
-          (selectedTool === "rectangle" || selectedTool === "circle") &&
-          isManipulatingShape
-        ) {
-          if (!canvasSnapshotRef.current || !shapeStartPosRef.current) return;
-          context.putImageData(canvasSnapshotRef.current, 0, 0);
-          applyCurrentSettings(context);
-          if (selectedTool === "rectangle") {
-            drawRectangle(
-              context,
-              shapeStartPosRef.current.x,
-              shapeStartPosRef.current.y,
-              coords.x,
-              coords.y
-            );
-          } else if (selectedTool === "circle") {
-            drawCircle(
-              context,
-              shapeStartPosRef.current.x,
-              shapeStartPosRef.current.y,
-              coords.x,
-              coords.y
-            );
+          const startW = activeLayer.w;
+          const startH = activeLayer.h;
+          const startC = { x: activeLayer.x + startW / 2, y: activeLayer.y + startH / 2 };
+          const startR = activeLayer.rotation;
+
+          // Anchor point is the OPPOSITE side handle in local space
+          let anchorLocal = { x: 0, y: 0 };
+          if (action.includes('w')) anchorLocal.x = startW / 2;
+          else if (action.includes('e')) anchorLocal.x = -startW / 2;
+
+          if (action.includes('n')) anchorLocal.y = startH / 2;
+          else if (action.includes('s')) anchorLocal.y = -startH / 2;
+
+          transformStartRef.current = {
+            startX: pos.cssX,
+            startY: pos.cssY,
+            layerStart: { ...activeLayer },
+            startW,
+            startH,
+            startC,
+            startR,
+            anchorLocal,
+            aspect: startW / Math.max(startH, 1)
+          };
+        } else {
+          // Hit test for selection
+          const hitLayer = getHitLayer(pos);
+          if (hitLayer) {
+            setActiveLayerId(hitLayer.id);
+            transformActionRef.current = "move";
+            transformStartRef.current = {
+              startX: pos.cssX,
+              startY: pos.cssY,
+              layerStart: { ...hitLayer }
+            };
+          } else {
+            setActiveLayerId(null);
           }
-          setLastPosition(coords);
         }
-      },
-      [
-        isDrawing,
-        selectedTool,
-        getCoords,
-        canEdit,
-        drawRectangle,
-        drawCircle,
-        isManipulatingShape,
-        applyCurrentSettings,
-        redrawCanvas
-      ]
-    );
-
-    const stopDrawing = useCallback(() => {
-      if (draggingObjectRef.current) {
-        draggingObjectRef.current = null;
+        renderOverlay();
         return;
       }
 
-      if (!isDrawing || !contextRef.current || !canEdit) return;
-      const context = contextRef.current;
+      // --- Drawing Tools ---
+      isDrawingRef.current = true;
 
-      if (
-        isManipulatingShape &&
-        (selectedTool === "rectangle" || selectedTool === "circle")
-      ) {
-        if (canvasSnapshotRef.current && shapeStartPosRef.current) {
-          context.putImageData(canvasSnapshotRef.current, 0, 0);
-          const endCoords = lastPosition;
-          applyCurrentSettings(context);
-          if (selectedTool === "rectangle") {
-            drawRectangle(
-              context,
-              shapeStartPosRef.current.x,
-              shapeStartPosRef.current.y,
-              endCoords.x,
-              endCoords.y
-            );
-          } else if (selectedTool === "circle") {
-            drawCircle(
-              context,
-              shapeStartPosRef.current.x,
-              shapeStartPosRef.current.y,
-              endCoords.x,
-              endCoords.y
-            );
+      if (selectedTool === "bucket") {
+        // Wrap floodFill to show loader immediately if we had one,
+        // but since we optimized the queue, synchronous execution is acceptable
+        // if we process downscaled or heavily optimized indexing
+        floodFill(pos.x, pos.y);
+        isDrawingRef.current = false;
+      } else if (selectedTool === "pen" || selectedTool === "eraser") {
+        const pCtx = paintCtxRef.current;
+        applyDrawSettings(pCtx);
+        pCtx.beginPath();
+        pCtx.moveTo(pos.x, pos.y);
+        // Draw a dot on click
+        pCtx.lineTo(pos.x, pos.y);
+        pCtx.stroke();
+        renderScene();
+      } else if (selectedTool === "rectangle" || selectedTool === "circle") {
+        shapeStartPosRef.current = pos;
+        try {
+          shapeSnapshotRef.current = paintCtxRef.current.getImageData(
+            0, 0, paintCanvasRef.current.width, paintCanvasRef.current.height
+          );
+        } catch {
+          console.error(e);
+        }
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canEdit, selectedTool, getCanvasPoint, setActiveLayerId, renderOverlay, applyDrawSettings, renderScene]);
+
+    const onPointerMove = useCallback((e) => {
+      const pos = getCanvasPoint(e);
+      if (!pos) return;
+      updateCursor(pos);
+
+      // Multitouch gesture logic
+      if (e.touches) {
+        for (let i = 0; i < e.touches.length; i++) {
+          pointersRef.current.set(e.touches[i].identifier, {
+            x: e.touches[i].clientX,
+            y: e.touches[i].clientY
+          });
+        }
+      }
+
+      if (selectedTool === "image" && activeLayerIdRef.current && transformActionRef.current) {
+        e.preventDefault(); // Prevent scrolling while transforming
+        const action = transformActionRef.current;
+        const start = transformStartRef.current;
+        const layerStr = start.layerStart;
+
+        const dx = pos.cssX - start.startX;
+        const dy = pos.cssY - start.startY;
+
+        const layer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
+        if (!layer) return;
+
+        if (action === "move") {
+          layer.x = layerStr.x + dx;
+          layer.y = layerStr.y + dy;
+        } else if (action === "rotate") {
+          const cx = layerStr.x + layerStr.w / 2;
+          const cy = layerStr.y + layerStr.h / 2;
+          const angleStart = Math.atan2(start.startY - cy, start.startX - cx);
+          const angleNow = Math.atan2(pos.cssY - cy, pos.cssX - cx);
+          let angleDelta = (angleNow - angleStart) * 180 / Math.PI;
+
+          let newRot = layerStr.rotation + angleDelta;
+          if (e.shiftKey) { // Snap to 15 degrees
+            newRot = Math.round(newRot / 15) * 15;
+          }
+          layer.rotation = newRot;
+        } else if (action.startsWith('resize')) {
+          const { startW, startH, startC, startR, anchorLocal: A, aspect } = start;
+
+          // 1. Convert pointer to local space relative to startC
+          const pointerRotated = rotatePoint(pos.cssX, pos.cssY, startC.x, startC.y, -startR);
+          const P = {
+            x: pointerRotated.x - startC.x,
+            y: pointerRotated.y - startC.y
+          };
+
+          const MIN_SIZE = 24;
+          let newW = startW;
+          let newH = startH;
+
+          // Unconstrained distances from anchor to pointer
+          let ldx = P.x - A.x;
+          let ldy = P.y - A.y;
+
+          const isCorner = ['resize-nw', 'resize-ne', 'resize-sw', 'resize-se'].includes(action);
+
+          if (isCorner) {
+            let newW_raw = Math.abs(ldx);
+            let newH_raw = Math.abs(ldy);
+
+            let preserveAspect = true;
+            if (e.shiftKey) preserveAspect = false;
+
+            if (preserveAspect) {
+              if (newW_raw / newH_raw > aspect) {
+                newW = newW_raw;
+                newH = newW_raw / aspect;
+              } else {
+                newH = newH_raw;
+                newW = newH_raw * aspect;
+              }
+            } else {
+              newW = newW_raw;
+              newH = newH_raw;
+            }
+
+            newW = Math.max(newW, MIN_SIZE);
+            newH = Math.max(newH, MIN_SIZE);
+          } else {
+            // Side handles: one-axis stretch
+            if (action === 'resize-w' || action === 'resize-e') {
+              let newW_raw = Math.abs(ldx);
+              newW = Math.max(newW_raw, MIN_SIZE);
+              newH = startH;
+            } else if (action === 'resize-n' || action === 'resize-s') {
+              let newH_raw = Math.abs(ldy);
+              newH = Math.max(newH_raw, MIN_SIZE);
+              newW = startW;
+            }
+          }
+
+          // 2. Compute new center in local space
+          let signX = 0;
+          if (action.includes('e')) signX = 1;
+          if (action.includes('w')) signX = -1;
+
+          let signY = 0;
+          if (action.includes('s')) signY = 1;
+          if (action.includes('n')) signY = -1;
+
+          const draggedCornerLocal = {
+            x: A.x + signX * newW,
+            y: A.y + signY * newH
+          };
+
+          const centerLocal = {
+            x: (A.x + draggedCornerLocal.x) / 2,
+            y: (A.y + draggedCornerLocal.y) / 2
+          };
+
+          // 3. Convert new center back to canvas space
+          const cos_r = Math.cos(startR * Math.PI / 180);
+          const sin_r = Math.sin(startR * Math.PI / 180);
+
+          const newCenterCanvas = {
+            x: startC.x + centerLocal.x * cos_r - centerLocal.y * sin_r,
+            y: startC.y + centerLocal.x * sin_r + centerLocal.y * cos_r
+          };
+
+          layer.w = newW;
+          layer.h = newH;
+          layer.x = newCenterCanvas.x - newW / 2;
+          layer.y = newCenterCanvas.y - newH / 2;
+        }
+
+        renderScene();
+        renderOverlay();
+        return;
+      }
+
+      if (!isDrawingRef.current || !canEdit) {
+        lastPosRef.current = pos;
+        if (activeLayerIdRef.current || selectedTool === "pen" || selectedTool === "eraser") {
+          renderOverlay(); // Update hover/brush preview
+        }
+        return;
+      }
+
+      const pCtx = paintCtxRef.current;
+      if (!pCtx) return;
+
+      if ((selectedTool === "pen" || selectedTool === "eraser") && !shapeSnapshotRef.current) {
+        pCtx.lineTo(pos.x, pos.y);
+        pCtx.stroke();
+        lastPosRef.current = pos;
+        renderScene();
+        renderOverlay();
+      } else if ((selectedTool === "rectangle" || selectedTool === "circle") && shapeSnapshotRef.current) {
+        // Restore snapshot
+        pCtx.putImageData(shapeSnapshotRef.current, 0, 0);
+        applyDrawSettings(pCtx);
+
+        const sPos = shapeStartPosRef.current;
+        pCtx.beginPath();
+        if (selectedTool === "rectangle") {
+          pCtx.rect(sPos.x, sPos.y, pos.x - sPos.x, pos.y - sPos.y);
+        } else if (selectedTool === "circle") {
+          const rx = Math.abs(pos.x - sPos.x) / 2;
+          const ry = Math.abs(pos.y - sPos.y) / 2;
+          const cx = Math.min(pos.x, sPos.x) + rx;
+          const cy = Math.min(pos.y, sPos.y) + ry;
+          pCtx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+        }
+        pCtx.stroke();
+        lastPosRef.current = pos;
+        renderScene();
+      }
+    }, [selectedTool, canEdit, getCanvasPoint, updateCursor, applyDrawSettings, renderScene, renderOverlay]);
+
+    const onPointerUp = useCallback((e) => {
+      // Handle pointer release
+      if (e.changedTouches) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          pointersRef.current.delete(e.changedTouches[i].identifier);
+        }
+      }
+
+      if (transformActionRef.current) {
+        transformActionRef.current = null;
+        transformStartRef.current = null;
+        saveSnapshot();
+        renderOverlay();
+        triggerUpdate(); // To update toolbar coordinates if needed
+        return;
+      }
+
+      if (!isDrawingRef.current || !canEdit) return;
+
+      isDrawingRef.current = false;
+      shapeStartPosRef.current = null;
+      shapeSnapshotRef.current = null;
+
+      saveSnapshot();
+      renderOverlay(); // Clear brush preview if mouse left
+    }, [canEdit, saveSnapshot, renderOverlay, triggerUpdate]);
+
+    // --- Flood Fill (Composite-Aware) ---
+    const floodFill = useCallback((startX, startY) => {
+      const canvas = mainCanvasRef.current;
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      // We operate in backing store pixels explicitly.
+      const cWidth = canvas.width;
+      const cHeight = canvas.height;
+
+      const sX = Math.floor(startX);
+      const sY = Math.floor(startY);
+      if (sX < 0 || sX >= cWidth || sY < 0 || sY >= cHeight) return;
+
+      // 1. Render Composite to temp canvas at FULL backing resolution (NO extra scaling)
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = cWidth;
+      tempCanvas.height = cHeight;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      // We DO NOT scale tempCtx by DPR because renderScene already receives unscaled tempCtx,
+      // and we want exact 1:1 pixel mapping with mainCanvas.
+      // Call renderScene, but tell it we are overriding the scale (so it paints logical objects scaled to backing store)
+      // Since renderScene internally expects to draw to logical dimensions, we apply a safe workaround:
+      tempCtx.scale(dpr, dpr);
+      renderScene(tempCtx);
+
+      // 2. Get image data from the fully scaled composite
+      let compositeData;
+      try {
+        compositeData = tempCtx.getImageData(0, 0, cWidth, cHeight);
+      } catch (e) {
+        console.error("Flood fill getImageData error:", e);
+        return;
+      }
+
+      const data = compositeData.data;
+      const pixelIndex = (sY * cWidth + sX) * 4;
+      const targetColor = [
+        data[pixelIndex], data[pixelIndex + 1], data[pixelIndex + 2], data[pixelIndex + 3]
+      ];
+
+      const fillRgba = hexToRgba(selectedColor);
+      if (!fillRgba) return;
+
+      const tolerance = 64; // Slightly higher tolerance for anti-aliasing boundaries
+      const colorMatch = (i) => {
+        return Math.abs(data[i] - targetColor[0]) <= tolerance &&
+          Math.abs(data[i + 1] - targetColor[1]) <= tolerance &&
+          Math.abs(data[i + 2] - targetColor[2]) <= tolerance &&
+          Math.abs(data[i + 3] - targetColor[3]) <= tolerance;
+      };
+
+      if (colorMatch(pixelIndex) &&
+        Math.abs(fillRgba[0] - targetColor[0]) <= tolerance &&
+        Math.abs(fillRgba[1] - targetColor[1]) <= tolerance &&
+        Math.abs(fillRgba[2] - targetColor[2]) <= tolerance) {
+        return; // Already same color
+      }
+
+      // Optimize queue to prevent O(N^2) shift array locking
+      const maxPixels = cWidth * cHeight;
+      const queueX = new Uint16Array(maxPixels);
+      const queueY = new Uint16Array(maxPixels);
+      let head = 0;
+      let tail = 0;
+
+      queueX[tail] = sX;
+      queueY[tail] = sY;
+      tail++;
+
+      const visited = new Uint8Array(maxPixels);
+      visited[sY * cWidth + sX] = 1;
+
+      // Create a mask for the paint layer
+      const maskCanvas = document.createElement("canvas");
+      maskCanvas.width = cWidth;
+      maskCanvas.height = cHeight;
+      const maskCtx = maskCanvas.getContext("2d");
+      const maskData = maskCtx.createImageData(cWidth, cHeight);
+      const mdata = maskData.data;
+
+      // Directions: right, left, down, up
+      const dx = [1, -1, 0, 0];
+      const dy = [0, 0, 1, -1];
+
+      while (head < tail) {
+        const x = queueX[head];
+        const y = queueY[head];
+        head++;
+
+        const i = (y * cWidth + x) * 4;
+        mdata[i] = fillRgba[0];
+        mdata[i + 1] = fillRgba[1];
+        mdata[i + 2] = fillRgba[2];
+        mdata[i + 3] = fillRgba[3];
+
+        for (let d = 0; d < 4; d++) {
+          const nx = x + dx[d];
+          const ny = y + dy[d];
+
+          if (nx >= 0 && nx < cWidth && ny >= 0 && ny < cHeight) {
+            const idx = ny * cWidth + nx;
+            if (visited[idx] === 0) {
+              visited[idx] = 1; // Mark immediately to prevent duplicate queueing
+              if (colorMatch(idx * 4)) {
+                queueX[tail] = nx;
+                queueY[tail] = ny;
+                tail++;
+              }
+            }
           }
         }
       }
 
-      canvasSnapshotRef.current = null;
-      shapeStartPosRef.current = null;
-      setIsManipulatingShape(false);
-      setIsDrawing(false);
+      // Phase 3: Edge Quality (1px Morphological Feather Expansion)
+      // Dilates the fill region over semi-transparent antialiasing halos
+      const expandedMaskData = maskCtx.createImageData(cWidth, cHeight);
+      const expMdata = expandedMaskData.data;
+
+      for (let y = 1; y < cHeight - 1; y++) {
+        for (let x = 1; x < cWidth - 1; x++) {
+          const idx = (y * cWidth + x) * 4;
+
+          // If already filled, copy it
+          if (mdata[idx + 3] > 0) {
+            expMdata[idx] = mdata[idx];
+            expMdata[idx + 1] = mdata[idx + 1];
+            expMdata[idx + 2] = mdata[idx + 2];
+            expMdata[idx + 3] = mdata[idx + 3];
+          } else {
+            // Check neighbors for dilation
+            const nUp = ((y - 1) * cWidth + x) * 4;
+            const nDown = ((y + 1) * cWidth + x) * 4;
+            const nLeft = (y * cWidth + (x - 1)) * 4;
+            const nRight = (y * cWidth + (x + 1)) * 4;
+
+            if (mdata[nUp + 3] > 0 || mdata[nDown + 3] > 0 || mdata[nLeft + 3] > 0 || mdata[nRight + 3] > 0) {
+              expMdata[idx] = fillRgba[0];
+              expMdata[idx + 1] = fillRgba[1];
+              expMdata[idx + 2] = fillRgba[2];
+              expMdata[idx + 3] = fillRgba[3]; // Max opacity to clip the halo
+            }
+          }
+        }
+      }
+
+      maskCtx.putImageData(expandedMaskData, 0, 0);
+
+      // Phase 4: Apply mask to paint layer specifically
+      const pCtx = paintCtxRef.current;
+      pCtx.save();
+      pCtx.resetTransform(); // clear any CSS scale matrix offsets before writing
+      pCtx.globalCompositeOperation = "source-over";
+      pCtx.drawImage(maskCanvas, 0, 0);
+      pCtx.restore();
+
+      renderScene();
+      saveSnapshot();
+    }, [selectedColor, renderScene, saveSnapshot]);
+
+    const clearCanvas = useCallback(() => {
+      // Clear all paint layer canvases
+      layersRef.current.forEach(l => {
+        if (l.type === 'paint' && l.ctx && l.canvas) {
+          l.ctx.clearRect(0, 0, l.canvas.width, l.canvas.height);
+        }
+      });
+      layersRef.current = [];
+      initPaintLayer();
+      setActiveLayerId(null);
+      historyRef.current = [];
+      historyStepRef.current = -1;
+
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [initPaintLayer, renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const downloadImage = useCallback(() => {
+      const canvas = mainCanvasRef.current;
+      if (!canvas) return;
+
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      tempCtx.scale(dpr, dpr);
+
+      renderScene(tempCtx, false);
 
       try {
-        drawingDataRef.current = context.getImageData(
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        // Save history state after drawing
-        saveSnapshot();
-      } catch (e) {
-        console.error("Error saving final drawing data:", e);
-        drawingDataRef.current = null;
+        const dataUrl = tempCanvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = "paint-again-drawing.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch {
+        alert("Could not download");
       }
-    }, [
-      isDrawing,
-      isManipulatingShape,
-      selectedTool,
-      drawRectangle,
-      drawCircle,
-      applyCurrentSettings,
-      lastPosition,
-      canEdit,
-      saveSnapshot
-    ]);
+    }, [renderScene]);
 
-    // --- Resize/setup effect ---
-    useEffect(() => {
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      contextRef.current = context;
-      let animationFrameId = null;
+    const toBlob = useCallback(async () => {
+      const canvas = mainCanvasRef.current;
+      if (!canvas) return null;
 
-      const setCanvasDimensions = (initialSetup = false) => {
-        if (!canvas.parentElement) return;
-        const dpr = window.devicePixelRatio || 1;
-        const { width, height } = canvas.parentElement.getBoundingClientRect();
-        const displayWidth = Math.floor(width);
-        const displayHeight = Math.floor(height);
-        const backingStoreWidth = Math.floor(width * dpr);
-        const backingStoreHeight = Math.floor(height * dpr);
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      tempCtx.scale(dpr, dpr);
 
-        if (
-          !initialSetup &&
-          canvas.width === backingStoreWidth &&
-          canvas.height === backingStoreHeight
-        ) {
-          return;
+      renderScene(tempCtx, false);
+
+      return new Promise(resolve => tempCanvas.toBlob(blob => resolve(blob), "image/png"));
+    }, [renderScene]);
+
+    // --- Object API ---
+    const deleteObject = useCallback((id) => {
+      const idx = layersRef.current.findIndex(l => l.id === id);
+      if (idx > -1) {
+        layersRef.current.splice(idx, 1);
+        if (activeLayerIdRef.current === id) setActiveLayerId(null);
+        renderScene();
+        renderOverlay();
+        saveSnapshot();
+        triggerUpdate();
+      }
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const duplicateObject = useCallback((id) => {
+      const layer = layersRef.current.find(l => l.id === id);
+      if (layer && layer.type === "image") {
+        const idx = layersRef.current.indexOf(layer);
+        const newLayer = { ...layer, id: uid(), x: layer.x + 16, y: layer.y + 16 };
+        layersRef.current.splice(idx + 1, 0, newLayer);
+        setActiveLayerId(newLayer.id);
+        renderScene();
+        renderOverlay();
+        saveSnapshot();
+        triggerUpdate();
+      }
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const reorderObject = useCallback((id, dir) => {
+      const targetLayer = layersRef.current.find(l => l.id === id);
+      if (!targetLayer) return;
+      const idx = layersRef.current.indexOf(targetLayer);
+      // layers: 0 is paint layer normally. We only reorder above paint layer?
+      // Let's just allow reordering anywhere except BEFORE paint layer if we want
+      // But the prompt said Images MUST be layers. Paint MUST persist in a paint layer.
+
+      if (dir === 'forward' && idx < layersRef.current.length - 1) {
+        layersRef.current.splice(idx, 1);
+        layersRef.current.splice(idx + 1, 0, targetLayer);
+      } else if (dir === 'backward' && idx > 0) { // Keep index > 0 to not go behind a potential fixed bg, but layers[0] is paint. Can go behind paint.
+        layersRef.current.splice(idx, 1);
+        layersRef.current.splice(idx - 1, 0, targetLayer);
+      } else if (dir === 'front') {
+        layersRef.current.splice(idx, 1);
+        layersRef.current.push(targetLayer);
+      } else if (dir === 'back') {
+        layersRef.current.splice(idx, 1);
+        layersRef.current.unshift(targetLayer); // Can go behind paint layer!
+      } else {
+        return;
+      }
+
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const applyObjectHelper = useCallback((id, mode) => {
+      const layer = layersRef.current.find(l => l.id === id);
+      if (!layer || layer.type !== "image") return;
+      const canvas = mainCanvasRef.current;
+      if (!canvas) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const logicalW = canvas.width / dpr;
+      const logicalH = canvas.height / dpr;
+
+      if (mode === 'fit' || mode === 'fill') {
+        const padding = mode === 'fit' ? 16 : 0;
+        const targetW = logicalW - padding * 2;
+        const targetH = logicalH - padding * 2;
+
+        let scale;
+        if (mode === 'fit') {
+          scale = Math.min(targetW / layer.naturalW, targetH / layer.naturalH);
+        } else {
+          scale = Math.max(targetW / layer.naturalW, targetH / layer.naturalH);
         }
 
-        const savedDrawing = drawingDataRef.current;
-        canvas.width = backingStoreWidth;
-        canvas.height = backingStoreHeight;
-        canvas.style.width = `${displayWidth}px`;
-        canvas.style.height = `${displayHeight}px`;
-        context.resetTransform();
-        context.scale(dpr, dpr);
-        fillCanvasBackground(context, canvas);
+        layer.w = layer.naturalW * scale;
+        layer.h = layer.naturalH * scale;
+        layer.x = (logicalW - layer.w) / 2;
+        layer.y = (logicalH - layer.h) / 2;
+        layer.rotation = 0;
+      } else if (mode === 'reset') {
+        layer.rotation = 0;
+        layer.opacity = 1;
+        // Natural size or fit if too big
+        const scale = Math.min(1, (logicalW - 32) / layer.naturalW, (logicalH - 32) / layer.naturalH);
+        layer.w = layer.naturalW * scale;
+        layer.h = layer.naturalH * scale;
+      }
 
-        if (savedDrawing) {
-          try {
-            const tempC = document.createElement("canvas");
-            tempC.width = savedDrawing.width;
-            tempC.height = savedDrawing.height;
-            tempC.getContext("2d").putImageData(savedDrawing, 0, 0);
-            context.drawImage(tempC, 0, 0, displayWidth, displayHeight);
-          } catch (e) {
-            console.error("Restore error:", e);
-            drawingDataRef.current = null;
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const changeObjectOpacity = useCallback((id, opacity) => {
+      const layer = layersRef.current.find(l => l.id === id);
+      if (layer) {
+        layer.opacity = opacity;
+        renderScene();
+        // Optional: saveSnapshot here or debounce
+        triggerUpdate();
+      }
+    }, [renderScene, triggerUpdate]);
+
+    const nudgeObject = useCallback((id, dx, dy) => {
+      const layer = layersRef.current.find(l => l.id === id);
+      if (layer) {
+        layer.x += dx;
+        layer.y += dy;
+        renderScene();
+        renderOverlay();
+        triggerUpdate();
+      }
+    }, [renderScene, renderOverlay, triggerUpdate]);
+
+    // --- Setup & Imperative Handle ---
+    useEffect(() => {
+      mainCtxRef.current = mainCanvasRef.current.getContext("2d", { willReadFrequently: true });
+      overlayCtxRef.current = overlayCanvasRef.current.getContext("2d");
+
+      initPaintLayer();
+
+      const setDimensions = () => {
+        const mcvs = mainCanvasRef.current;
+        const ocvs = overlayCanvasRef.current;
+        if (!mcvs || !mcvs.parentElement) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const { width, height } = mcvs.parentElement.getBoundingClientRect();
+        const bw = Math.floor(width * dpr);
+        const bh = Math.floor(height * dpr);
+
+        if (mcvs.width !== bw || mcvs.height !== bh) {
+          // Save all paint layer data
+          const paintDataMap = {};
+          layersRef.current.forEach(l => {
+            if (l.type === 'paint' && l.canvas && l.canvas.width > 0 && l.canvas.height > 0) {
+              try { paintDataMap[l.id] = l.ctx.getImageData(0, 0, l.canvas.width, l.canvas.height); } catch { /* ignore */ }
+            }
+          });
+
+          mcvs.width = bw; mcvs.height = bh;
+          ocvs.width = bw; ocvs.height = bh;
+          mcvs.style.width = `${width}px`; mcvs.style.height = `${height}px`;
+          ocvs.style.width = `${width}px`; ocvs.style.height = `${height}px`;
+
+          mainCtxRef.current.scale(dpr, dpr);
+          overlayCtxRef.current.scale(dpr, dpr);
+
+          // Resize all paint layer canvases and restore data
+          layersRef.current.forEach(l => {
+            if (l.type === 'paint') {
+              l.canvas.width = bw;
+              l.canvas.height = bh;
+              const pData = paintDataMap[l.id];
+              if (pData) {
+                try { l.ctx.putImageData(pData, 0, 0); } catch { /* ignore */ }
+              }
+            }
+          });
+          syncActivePaintRefs();
+
+          if (historyRef.current.length === 0) {
+            saveSnapshot();
+          }
+
+          renderScene();
+          renderOverlay();
+        }
+      };
+
+      setDimensions();
+      const obs = new ResizeObserver(() => setDimensions());
+      if (mainCanvasRef.current.parentElement) obs.observe(mainCanvasRef.current.parentElement);
+
+      return () => obs.disconnect();
+    }, [initPaintLayer, renderScene, renderOverlay, saveSnapshot]);
+
+    useEffect(() => {
+      applyDrawSettings(paintCtxRef.current);
+      const pos = lastPosRef.current;
+      if (pos) updateCursor(pos);
+      if (selectedTool === "pen" || selectedTool === "eraser" || selectedTool === "image") {
+        renderOverlay();
+      }
+    }, [selectedColor, lineWidth, selectedTool, applyDrawSettings, renderOverlay, updateCursor]);
+
+    // --- Layer Management API ---
+    const addPaintLayer = useCallback(() => {
+      const mcvs = mainCanvasRef.current;
+      const { canvas, ctx } = createPaintCanvas(mcvs?.width || 1, mcvs?.height || 1);
+      const paintCount = layersRef.current.filter(l => l.type === 'paint').length + 1;
+      const layer = {
+        id: uid(),
+        type: 'paint',
+        name: `Слой ${paintCount}`,
+        visible: true,
+        canvas,
+        ctx,
+      };
+      const activeIdx = layersRef.current.findIndex(l => l.id === activeLayerIdRef.current);
+      if (activeIdx >= 0) {
+        layersRef.current.splice(activeIdx + 1, 0, layer);
+      } else {
+        layersRef.current.push(layer);
+      }
+      activePaintLayerIdRef.current = layer.id;
+      syncActivePaintRefs();
+      renderScene();
+      saveSnapshot();
+      triggerUpdate();
+    }, [renderScene, saveSnapshot, triggerUpdate]);
+
+    const deleteLayer = useCallback((id) => {
+      const idx = layersRef.current.findIndex(l => l.id === id);
+      if (idx < 0) return;
+      layersRef.current.splice(idx, 1);
+      if (!layersRef.current.some(l => l.type === 'paint')) {
+        initPaintLayer();
+      }
+      if (activeLayerIdRef.current === id) {
+        setActiveLayerId(null);
+      }
+      if (activePaintLayerIdRef.current === id) {
+        const firstPaint = layersRef.current.find(l => l.type === 'paint');
+        if (firstPaint) activePaintLayerIdRef.current = firstPaint.id;
+        syncActivePaintRefs();
+      }
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [initPaintLayer, renderScene, renderOverlay, saveSnapshot, triggerUpdate, setActiveLayerId]);
+
+    const moveLayer = useCallback((id, direction) => {
+      const idx = layersRef.current.findIndex(l => l.id === id);
+      if (idx < 0) return;
+      let newIdx = idx;
+      if (direction === 'up' && idx < layersRef.current.length - 1) newIdx = idx + 1;
+      if (direction === 'down' && idx > 0) newIdx = idx - 1;
+      if (direction === 'front') newIdx = layersRef.current.length - 1;
+      if (direction === 'back') newIdx = 0;
+      if (newIdx === idx) return;
+      const [layer] = layersRef.current.splice(idx, 1);
+      layersRef.current.splice(newIdx, 0, layer);
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    const toggleLayerVisibility = useCallback((id) => {
+      const layer = layersRef.current.find(l => l.id === id);
+      if (layer) {
+        layer.visible = !layer.visible;
+        renderScene();
+        triggerUpdate();
+      }
+    }, [renderScene, triggerUpdate]);
+
+    // --- Scene Export / Import ---
+    const exportScene = useCallback(() => {
+      const mcvs = mainCanvasRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      const logicalW = mcvs ? mcvs.width / dpr : 0;
+      const logicalH = mcvs ? mcvs.height / dpr : 0;
+
+      const exportedLayers = layersRef.current.map(l => {
+        if (l.type === 'paint') {
+          // Serialize paint bitmap as PNG dataURL
+          let bitmap = null;
+          if (l.canvas && l.canvas.width > 0 && l.canvas.height > 0) {
+            try { bitmap = l.canvas.toDataURL('image/png'); } catch { /* ignore */ }
+          }
+          return { type: 'paint', id: l.id, name: l.name, visible: l.visible, bitmap };
+        }
+        // Image layer — serialize transforms + original src
+        return {
+          type: 'image', id: l.id, name: l.name, visible: l.visible,
+          src: l.src, x: l.x, y: l.y, w: l.w, h: l.h,
+          rotation: l.rotation, opacity: l.opacity,
+          naturalW: l.naturalW, naturalH: l.naturalH,
+        };
+      });
+
+      return {
+        version: 1,
+        canvas: { w: logicalW, h: logicalH },
+        activePaintLayerId: activePaintLayerIdRef.current,
+        layers: exportedLayers,
+      };
+    }, []);
+
+    const importScene = useCallback(async (scene) => {
+      if (!scene || scene.version !== 1 || !Array.isArray(scene.layers)) {
+        throw new Error('Неверный формат сцены');
+      }
+
+      const mcvs = mainCanvasRef.current;
+      const bw = mcvs?.width || 1;
+      const bh = mcvs?.height || 1;
+
+      // Clear current state
+      layersRef.current = [];
+      historyRef.current = [];
+      historyStepRef.current = -1;
+
+      // Restore layers
+      const imageLoadPromises = [];
+
+      for (const ld of scene.layers) {
+        if (ld.type === 'paint') {
+          const { canvas, ctx } = createPaintCanvas(bw, bh);
+          const layer = { id: ld.id, type: 'paint', name: ld.name || 'Слой', visible: ld.visible !== false, canvas, ctx };
+          layersRef.current.push(layer);
+
+          // Load bitmap into canvas
+          if (ld.bitmap) {
+            const p = new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+                resolve();
+              };
+              img.onerror = () => resolve(); // Skip on error
+              img.src = ld.bitmap;
+            });
+            imageLoadPromises.push(p);
+          }
+        } else if (ld.type === 'image') {
+          // Create image layer shell, load image async
+          const layer = {
+            id: ld.id, type: 'image', name: ld.name || 'Изображение', visible: ld.visible !== false,
+            src: ld.src, imgEl: null,
+            x: ld.x || 0, y: ld.y || 0, w: ld.w || 100, h: ld.h || 100,
+            rotation: ld.rotation || 0, opacity: ld.opacity ?? 1,
+            naturalW: ld.naturalW || ld.w || 100, naturalH: ld.naturalH || ld.h || 100,
+          };
+          layersRef.current.push(layer);
+
+          // Load image element
+          if (ld.src) {
+            const p = (async () => {
+              try {
+                // Reuse fetch→blob approach for CORS/auth
+                const session = getSession();
+                const headers = {};
+                if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+                let objectUrl = ld.src;
+                let usedBlob = false;
+                try {
+                  const res = await fetch(ld.src, { headers });
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    objectUrl = URL.createObjectURL(blob);
+                    usedBlob = true;
+                  }
+                } catch { /* fallback to direct src */ }
+
+                await new Promise((resolve, reject) => {
+                  const img = new Image();
+                  img.onload = () => {
+                    layer.imgEl = img;
+                    layer.naturalW = img.naturalWidth;
+                    layer.naturalH = img.naturalHeight;
+                    if (usedBlob) URL.revokeObjectURL(objectUrl);
+                    resolve();
+                  };
+                  img.onerror = () => {
+                    if (usedBlob) URL.revokeObjectURL(objectUrl);
+                    reject();
+                  };
+                  img.src = objectUrl;
+                });
+              } catch { /* image failed to load, layer stays without imgEl */ }
+            })();
+            imageLoadPromises.push(p);
           }
         }
-
-        drawObjects(context);
-        applyCurrentSettings(context);
-
-        if (initialSetup && historyRef.current.length === 0) {
-          saveSnapshot(); // Initial empty state
-        }
-      };
-
-      setCanvasDimensions(true);
-
-      const parentElement = canvas.parentElement;
-      const resizeObserver = new ResizeObserver(() => {
-        if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
-        animationFrameId = window.requestAnimationFrame(() =>
-          setCanvasDimensions(false)
-        );
-      });
-      if (parentElement) {
-        resizeObserver.observe(parentElement);
       }
 
-      return () => {
-        if (parentElement) resizeObserver.unobserve(parentElement);
-        if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
-      };
-    }, [applyCurrentSettings, fillCanvasBackground, drawObjects, saveSnapshot]);
+      // Wait for all bitmaps/images to load
+      await Promise.all(imageLoadPromises);
 
-    useEffect(() => {
-      if (contextRef.current && !isManipulatingShape) {
-        applyCurrentSettings(contextRef.current);
+      // Set active paint layer
+      if (scene.activePaintLayerId) {
+        activePaintLayerIdRef.current = scene.activePaintLayerId;
       }
-    }, [selectedColor, lineWidth, selectedTool, applyCurrentSettings, isManipulatingShape]);
+
+      // Ensure at least one paint layer
+      if (!layersRef.current.some(l => l.type === 'paint')) {
+        initPaintLayer();
+      }
+
+      syncActivePaintRefs();
+      renderScene();
+      renderOverlay();
+      saveSnapshot();
+      triggerUpdate();
+    }, [initPaintLayer, renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+
+    useImperativeHandle(ref, () => ({
+      clearCanvas,
+      downloadImage,
+      toBlob,
+      loadFromFile,
+      loadFromUrl,
+      addImageObject: (img) => addImageLayer(img),
+      undo,
+      redo,
+      canUndo: () => historyStepRef.current > 0,
+      canRedo: () => historyStepRef.current < historyRef.current.length - 1,
+      // Image Object API
+      deleteObject,
+      duplicateObject,
+      reorderObject,
+      applyObjectHelper,
+      changeObjectOpacity,
+      nudgeObject,
+      // Layer Management API
+      addPaintLayer,
+      deleteLayer,
+      moveLayer,
+      toggleLayerVisibility,
+      selectLayer: (id) => setActiveLayerId(id),
+      getLayers: () => layersRef.current.map(l => {
+        const clone = { id: l.id, type: l.type, name: l.name || (l.type === 'paint' ? 'Слой' : 'Изображение'), visible: l.visible };
+        if (l.type === 'image') { clone.src = l.src; }
+        return clone;
+      }),
+      getActivePaintLayerId: () => activePaintLayerIdRef.current,
+      getActiveLayerId: () => activeLayerIdRef.current,
+      // Scene persistence
+      exportScene,
+      importScene,
+    }), [
+      clearCanvas, downloadImage, toBlob, loadFromFile, loadFromUrl, addImageLayer,
+      undo, redo, deleteObject, duplicateObject, reorderObject, applyObjectHelper, changeObjectOpacity, nudgeObject,
+      addPaintLayer, deleteLayer, moveLayer, toggleLayerVisibility, setActiveLayerId,
+      exportScene, importScene
+    ]);
 
     return (
-      <canvas
-        ref={canvasRef}
-        className={styles.paintCanvas}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
-        onTouchCancel={stopDrawing}
-      />
+      <div ref={containerRef} className={styles.canvasWrapper}
+        style={{ position: 'relative', width: '100%', height: '100%' }}>
+
+        <canvas
+          ref={mainCanvasRef}
+          className={styles.paintCanvas}
+          style={{ display: 'block' }}
+        />
+
+        <canvas
+          ref={overlayCanvasRef}
+          className={styles.overlayCanvas}
+          style={{ position: 'absolute', top: 0, left: 0, touchAction: 'none' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
+          onPointerCancel={onPointerUp}
+        />
+      </div>
     );
   }
 );

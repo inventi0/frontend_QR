@@ -5,7 +5,7 @@ export const ProductCard = ({
   title,
   image,
   description,
-  width,
+
   height,
   position,
   onClickHandler,

@@ -3,7 +3,7 @@ import "../Auth/AuthModal.scss";
 import EyePasswordHide from "../icons/EyePasswordHide";
 import EyePasswordShow from "../icons/EyePasswordShow";
 import Close from "../icons/Close";
-import { useLoginMutation, useGetMeQuery } from "../../api/authApi";
+import { useLoginMutation, } from "../../api/authApi";
 import { setSession } from "../../utils/session";
 
 export const Login = ({ onClose, onSuccess }) => {

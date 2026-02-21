@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import CanvasComponent from "../components/CanvasComponent/CanvasComponent";
 import Toolbar from "../components/Toolbar/Toolbar";
+import LayersPanel from "../components/LayersPanel/LayersPanel";
 import styles from "./CreatorPage.module.scss";
 import { useGetMeQuery } from "../api/authApi";
 import {
   useCreateTemplateMutation,
   useListUserTemplatesQuery,
   useSetQrTemplateMutation,
+  useUpdateTemplateMutation,
 } from "../api/accountApi";
 import tshirtMockup from "../assets/tshirt_mockup.png";
 
@@ -15,14 +17,21 @@ export function CreatorPage() {
   const [selectedColor, setSelectedColor] = useState('#FFFFFF');
   const [lineWidth, setLineWidth] = useState(5);
   const [selectedTool, setSelectedTool] = useState('pen');
-  const [showMockup] = useState(false); // Removed setter to shut up lint, default false
-  const [showGrid] = useState(false);   // Removed setter to shut up lint, default false
+  const [showMockup] = useState(false);
+  const [showGrid] = useState(false);
+  const [activeObject, setActiveObject] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
   const [theme] = useState('dark');
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [templateError, setTemplateError] = useState(null);
+  const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
+  const [layersSnapshot, setLayersSnapshot] = useState([]);
   const canvasComponentRef = useRef(null);
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
+  const incomingTemplate = location.state?.template || null;
   const incomingTemplateUrl =
+    incomingTemplate?.file_url ||
     location.state?.templateUrl ||
     searchParams.get("template") ||
     null;
@@ -36,6 +45,7 @@ export function CreatorPage() {
   );
   const [createTemplate, { isLoading: isSavingTemplate }] = useCreateTemplateMutation();
   const [setQrTemplate] = useSetQrTemplateMutation();
+  const [updateTemplate] = useUpdateTemplateMutation();
 
   useEffect(() => {
     document.body.className = theme === 'light' ? 'light-theme' : '';
@@ -54,16 +64,18 @@ export function CreatorPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const [historyTrigger, setHistoryTrigger] = useState(0);
+  const [, setHistoryTrigger] = useState(0);
+
+  const refreshLayers = useCallback(() => {
+    if (canvasComponentRef.current) {
+      setLayersSnapshot(canvasComponentRef.current.getLayers());
+    }
+  }, []);
 
   const handleHistoryChange = useCallback(() => {
     setHistoryTrigger((prev) => prev + 1);
-  }, []);
-
-  // Force re-render on history change
-  useEffect(() => {
-    // console.log("History updated, trigger:", historyTrigger);
-  }, [historyTrigger]);
+    refreshLayers();
+  }, [refreshLayers]);
 
   const handleUndo = useCallback(() => {
     canvasComponentRef.current?.undo();
@@ -77,7 +89,7 @@ export function CreatorPage() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore if input/textarea is focused
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable) {
         return;
       }
 
@@ -90,20 +102,35 @@ export function CreatorPage() {
           handleUndo();
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        // Optional Redo constraint
         e.preventDefault();
         handleRedo();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject && selectedTool === 'image') {
+        e.preventDefault();
+        canvasComponentRef.current?.deleteObject(activeObject.id);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeObject && selectedTool === 'image') {
+        e.preventDefault();
+        canvasComponentRef.current?.duplicateObject(activeObject.id);
+      } else if (e.key.startsWith('Arrow') && activeObject && selectedTool === 'image') {
+        e.preventDefault();
+        const amount = e.shiftKey ? 10 : 1;
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowUp') dy = -amount;
+        if (e.key === 'ArrowDown') dy = amount;
+        if (e.key === 'ArrowLeft') dx = -amount;
+        if (e.key === 'ArrowRight') dx = amount;
+        if (dx !== 0 || dy !== 0) {
+          canvasComponentRef.current?.nudgeObject(activeObject.id, dx, dy);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, activeObject, selectedTool]);
 
   // Derive undo/redo state
   const canUndo = canvasComponentRef.current?.canUndo() || false;
   const canRedo = canvasComponentRef.current?.canRedo() || false;
-
 
   const handleClearCanvas = useCallback(() => {
     if (canvasComponentRef.current) {
@@ -120,12 +147,13 @@ export function CreatorPage() {
   const handleImportImage = useCallback((file) => {
     if (canvasComponentRef.current) {
       canvasComponentRef.current.loadFromFile(file);
+      setSelectedTool('image'); // Switch to move tool automatically
     }
   }, []);
 
   const handleLoadTemplateFromCloud = useCallback((tpl) => {
     if (!tpl?.file_url || !canvasComponentRef.current) return;
-    canvasComponentRef.current.loadFromUrl(tpl.file_url);
+    canvasComponentRef.current.loadFromUrl(tpl.file_url).catch(() => { });
   }, []);
 
   const handleSaveTemplate = useCallback(async () => {
@@ -145,10 +173,24 @@ export function CreatorPage() {
     if (!blob) return;
     const file = new File([blob], 'template.png', { type: 'image/png' });
     try {
+      // Step 1: Upload preview PNG
       const saved = await createTemplate({
         file,
         name: templateName.trim(),
       }).unwrap();
+
+      // Step 2: Export scene and persist in description
+      try {
+        const scene = canvasComponentRef.current.exportScene();
+        const sceneJson = JSON.stringify(scene);
+        await updateTemplate({
+          templateId: saved.id,
+          description: sceneJson,
+        }).unwrap();
+      } catch (sceneErr) {
+        console.warn('Сцена не сохранена, шаблон доступен только как изображение', sceneErr);
+      }
+
       if (incomingQrId) {
         try {
           await setQrTemplate({ template_id: saved.id }).unwrap();
@@ -161,13 +203,75 @@ export function CreatorPage() {
       console.error(error);
       alert('Не удалось сохранить шаблон.');
     }
-  }, [createTemplate, userId, incomingQrId, setQrTemplate]);
+  }, [createTemplate, updateTemplate, userId, incomingQrId, setQrTemplate]);
 
+  // --- Template / Scene loading ---
   useEffect(() => {
-    if (incomingTemplateUrl && canvasComponentRef.current) {
-      canvasComponentRef.current.loadFromUrl(incomingTemplateUrl);
-    }
-  }, [incomingTemplateUrl]);
+    if (!incomingTemplate && !incomingTemplateUrl) return;
+
+    let cancelled = false;
+
+    const tryLoad = () => {
+      if (cancelled) return;
+      if (!canvasComponentRef.current) {
+        requestAnimationFrame(tryLoad);
+        return;
+      }
+
+      setTemplateLoading(true);
+      setTemplateError(null);
+
+      // Try scene restore from description first
+      let scene = null;
+      if (incomingTemplate?.description) {
+        try {
+          const parsed = JSON.parse(incomingTemplate.description);
+          if (parsed?.version && Array.isArray(parsed?.layers)) {
+            scene = parsed;
+          }
+        } catch { /* not valid scene JSON, ignore */ }
+      }
+
+      if (scene) {
+        // Full scene restore
+        canvasComponentRef.current
+          .importScene(scene)
+          .then(() => {
+            if (!cancelled) {
+              setTemplateLoading(false);
+              refreshLayers();
+            }
+          })
+          .catch((err) => {
+            if (!cancelled) {
+              setTemplateLoading(false);
+              setTemplateError(err?.message || 'Не удалось восстановить сцену');
+            }
+          });
+      } else if (incomingTemplateUrl) {
+        // Fallback: load preview bitmap as image layer
+        canvasComponentRef.current
+          .loadFromUrl(incomingTemplateUrl)
+          .then(() => {
+            if (!cancelled) {
+              setTemplateLoading(false);
+              refreshLayers();
+            }
+          })
+          .catch((err) => {
+            if (!cancelled) {
+              setTemplateLoading(false);
+              setTemplateError(err?.message || 'Не удалось загрузить шаблон');
+            }
+          });
+      } else {
+        setTemplateLoading(false);
+      }
+    };
+
+    tryLoad();
+    return () => { cancelled = true; };
+  }, [incomingTemplate, incomingTemplateUrl, refreshLayers]);
 
   // Автоматическое скрытие Header при прокрутке
   useEffect(() => {
@@ -182,10 +286,8 @@ export function CreatorPage() {
 
           if (header) {
             if (currentScrollY > 100 && currentScrollY > lastScrollY) {
-              // Прокручиваем вниз - скрываем Header
               header.classList.add('header-hidden');
             } else {
-              // Прокручиваем вверх - показываем Header
               header.classList.remove('header-hidden');
             }
           }
@@ -201,27 +303,40 @@ export function CreatorPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Mobile Properties Panel State (Lifted for auto-close)
+  // Mobile Properties Panel State
   const [isPropsPanelOpen, setIsPropsPanelOpen] = useState(false);
+
+  // Auto-open mobile props panel when image is selected
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) return;
+    if (activeObject && selectedTool === 'image') {
+      setIsPropsPanelOpen(true);
+    }
+  }, [activeObject, selectedTool]);
 
   return (
     <div className={styles.appContainer}>
-
       <main className={styles.mainContent}>
-        {/* NEW: EditorContainer - toolbar, banner, canvas share width constraints */}
         <div className={styles.editorContainer}>
-
-          {/* 1. Auth Banner */}
           {!isAuthenticated && (
             <div className={styles.readOnlyBanner}>
               Авторизуйтесь, чтобы редактировать. Просмотр доступен всем.
             </div>
           )}
 
-          {/* 2. Canvas Container (Width Source of Truth) */}
+          {templateLoading && (
+            <div className={styles.loadingBanner}>Загрузка шаблона…</div>
+          )}
+          {templateError && (
+            <div className={styles.errorBanner}>
+              {templateError}
+              <button onClick={() => setTemplateError(null)}>✕</button>
+            </div>
+          )}
+
           <div
             className={styles.canvasContainer}
-            // Auto-close properties panel when interacting with canvas
             onPointerDown={() => setIsPropsPanelOpen(false)}
           >
             {showMockup && <img src={tshirtMockup} className={styles.mockupOverlay} alt="Mask" />}
@@ -235,10 +350,24 @@ export function CreatorPage() {
               showGrid={showGrid}
               onDirtyChange={setIsDirty}
               onHistoryChange={handleHistoryChange}
+              onActiveObjectChange={(obj) => { setActiveObject(obj); refreshLayers(); }}
             />
+
+            {isLayersPanelOpen && (
+              <LayersPanel
+                layers={layersSnapshot}
+                activeLayerId={canvasComponentRef.current?.getActiveLayerId()}
+                activePaintLayerId={canvasComponentRef.current?.getActivePaintLayerId()}
+                onSelectLayer={(id) => { canvasComponentRef.current?.selectLayer(id); refreshLayers(); }}
+                onMoveLayer={(id, dir) => { canvasComponentRef.current?.moveLayer(id, dir); refreshLayers(); }}
+                onDeleteLayer={(id) => { canvasComponentRef.current?.deleteLayer(id); refreshLayers(); }}
+                onToggleVisibility={(id) => { canvasComponentRef.current?.toggleLayerVisibility(id); refreshLayers(); }}
+                onAddPaintLayer={() => { canvasComponentRef.current?.addPaintLayer(); refreshLayers(); }}
+                onClose={() => setIsLayersPanelOpen(false)}
+              />
+            )}
           </div>
 
-          {/* 3. Toolbar (Always Below Canvas) */}
           <Toolbar
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
@@ -254,16 +383,22 @@ export function CreatorPage() {
             templateOptions={templates || []}
             onLoadTemplateFromCloud={handleLoadTemplateFromCloud}
             isReadOnly={!isAuthenticated}
-            // Legacy props
             showMockup={showMockup}
             showGrid={showGrid}
             onUndo={handleUndo}
             onRedo={handleRedo}
             canUndo={canUndo}
             canRedo={canRedo}
-            // Mobile Props State
             isPropsPanelOpen={isPropsPanelOpen}
             onToggleProps={setIsPropsPanelOpen}
+            activeObject={activeObject}
+            onApplyHelper={(mode) => canvasComponentRef.current?.applyObjectHelper(activeObject?.id, mode)}
+            onLayerOrder={(dir) => canvasComponentRef.current?.reorderObject(activeObject?.id, dir)}
+            onDeleteObject={() => canvasComponentRef.current?.deleteObject(activeObject?.id)}
+            onDuplicateObject={() => canvasComponentRef.current?.duplicateObject(activeObject?.id)}
+            onChangeOpacity={(opacity) => canvasComponentRef.current?.changeObjectOpacity(activeObject?.id, opacity)}
+            isLayersPanelOpen={isLayersPanelOpen}
+            onToggleLayers={() => setIsLayersPanelOpen(v => !v)}
           />
         </div>
       </main>

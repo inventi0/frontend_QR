@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import "./ProfilePage.scss";
 import {
   useGetMeQuery,
@@ -7,7 +7,6 @@ import {
   useSetActiveTemplateMutation
 } from "../api/authApi";
 import {
-  useListOrdersQuery,
   useListMyOrdersQuery,
   useListUserTemplatesQuery,
   useDeleteTemplateMutation,
@@ -52,8 +51,7 @@ export const ProfilePage = () => {
 
   const {
     data: templates,
-    isLoading: isTemplatesLoading,
-    isError: isTemplatesError,
+    isLoading: isTemplatesLoading
   } = useListUserTemplatesQuery(
     { userId, includeGlobal: true, limit: 50, offset: 0 },
     { skip: !userId }
@@ -88,8 +86,8 @@ export const ProfilePage = () => {
     setTimeout(() => setCopyState(false), 700);
   };
 
-  const openEditor = (templateUrl) => {
-    navigate("/creator", { state: { templateUrl } });
+  const openEditor = (tpl) => {
+    navigate("/creator", { state: { template: tpl, templateUrl: tpl?.file_url } });
   };
 
   const handleAvatarClick = () => {
@@ -118,7 +116,7 @@ export const ProfilePage = () => {
 
     try {
       await updateUser(formData).unwrap();
-    } catch (err) {
+    } catch {
       setUploadError("Не удалось загрузить аватар");
       setAvatarPreview(null);
     }
@@ -131,7 +129,7 @@ export const ProfilePage = () => {
 
     try {
       await deleteTemplate(templateId).unwrap();
-    } catch (err) {
+    } catch {
       alert("Не удалось удалить шаблон");
     }
   };
@@ -346,7 +344,7 @@ export const ProfilePage = () => {
                         {tpl.file_url && (
                           <button
                             className="apply-btn secondary"
-                            onClick={() => openEditor(tpl.file_url)}
+                            onClick={() => openEditor(tpl)}
                             title="Открыть шаблон в редакторе"
                           >
                             Редактировать

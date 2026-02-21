@@ -193,7 +193,7 @@
     background: linear-gradient(90deg, #8a5bf6, #5fd6ff);
     color: #0c0c0c;
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius-m);
     padding: 12px 24px;
     font-size: 18px;
     font-weight: 700;

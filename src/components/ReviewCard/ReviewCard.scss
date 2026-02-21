@@ -119,14 +119,14 @@
       /* Small glass container for avatar */
       padding: 3px;
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 50%;
+      border-radius: var(--radius-round);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .avatar {
       width: 34px;
       height: 34px;
-      border-radius: 50%;
+      border-radius: var(--radius-round);
       background-size: cover;
       background-position: center;
       background-color: #444;
@@ -194,7 +194,7 @@
 .delete-review-btn {
   height: 32px;
   padding: 0 16px;
-  border-radius: 50px;
+  border-radius: var(--radius-pill);
   /* Pill shape */
   font-size: 12px;
   font-weight: 600;

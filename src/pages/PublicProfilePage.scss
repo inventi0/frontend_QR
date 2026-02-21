@@ -117,7 +117,7 @@
 .qr-display-section {
   text-align: center;
   margin-bottom: 30px;
-  padding: 30px;
+  padding: 32px;
   background: linear-gradient(135deg, #667eea15, #764ba215);
   border-radius: var(--radius-l);
 
@@ -145,7 +145,7 @@
 
 .back-home-btn {
   width: 100%;
-  padding: 15px;
+  padding: 16px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
@@ -197,7 +197,7 @@
 
   .back-btn {
     margin-top: 30px;
-    padding: 12px 30px;
+    padding: 12px 32px;
     background: white;
     color: #667eea;
     border: none;
@@ -222,7 +222,7 @@
 
 @media (max-width: 768px) {
   .public-profile-container {
-    padding: 30px 20px;
+    padding: 32px 20px;
   }
 
   .profile-username {
