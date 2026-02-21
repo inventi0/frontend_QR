@@ -429,7 +429,7 @@ function Toolbar({
 
       {/* PROPERTIES PANEL (Popover on Mobile) */}
       <div
-        className={`${styles.centerGroup} ${(isPropsPanelOpen || (selectedTool === 'image' && activeObject)) ? styles.visible : ''}`}
+        className={`${styles.centerGroup} ${isPropsPanelOpen ? styles.visible : ''}`}
         ref={propsPanelRef}
       >
         {/* Mobile Header */}

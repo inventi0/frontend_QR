@@ -13,6 +13,7 @@ import {
   useGetUserQrQuery,
 } from "../api/accountApi";
 import Copy from "../components/icons/Copy";
+import { FaStar, FaCheck, FaPen, FaTrashAlt } from "react-icons/fa";
 import EyePasswordShow from "../components/icons/EyePasswordShow";
 import { useNavigate } from "react-router-dom";
 import { getOrderStatusText, getOrderStatusClass } from "../utils/orderStatus";
@@ -338,16 +339,18 @@ export const ProfilePage = () => {
                           onClick={() => handleSetActiveTemplate(tpl.id)}
                           disabled={isSettingActive || qrData?.current_template_id === tpl.id}
                           title={qrData?.current_template_id === tpl.id ? "Уже активный" : "Сделать активным для QR"}
+                          aria-label={qrData?.current_template_id === tpl.id ? "Шаблон активен" : "Сделать активным"}
                         >
-                          {qrData?.current_template_id === tpl.id ? "★ Активный" : "Сделать активным"}
+                          {qrData?.current_template_id === tpl.id ? <FaCheck /> : <FaStar />}
                         </button>
                         {tpl.file_url && (
                           <button
                             className="apply-btn secondary"
                             onClick={() => openEditor(tpl)}
-                            title="Открыть шаблон в редакторе"
+                            title="Редактировать шаблон"
+                            aria-label="Редактировать шаблон"
                           >
-                            Редактировать
+                            <FaPen />
                           </button>
                         )}
                         <button
@@ -355,8 +358,9 @@ export const ProfilePage = () => {
                           onClick={() => handleDeleteTemplate(tpl.id)}
                           disabled={isDeletingTemplate}
                           title="Удалить шаблон"
+                          aria-label="Удалить шаблон"
                         >
-                          Удалить
+                          <FaTrashAlt />
                         </button>
                       </div>
                     </div>
