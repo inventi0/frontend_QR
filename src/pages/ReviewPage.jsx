@@ -6,6 +6,9 @@ import { ReviewForm } from "../components/ReviewForm/ReviewForm";
 import {
   useCreateReviewMutation,
   useGetReviewsQuery,
+  useGetMyReviewQuery,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
 } from "../api/reviewApi";
 import { getSession } from "../utils/session";
 
@@ -13,6 +16,10 @@ export const ReviewPage = () => {
   const [showAll, setShowAll] = useState(false);
   const [modalActive, setModalActive] = useState(false);
   const [formError, setFormError] = useState("");
+  
+  const session = getSession();
+  const isAuthenticated = !!session?.accessToken;
+  const currentUserId = session?.userId;
 
   const { data, isLoading, isError, refetch } = useGetReviewsQuery(
     {
@@ -23,6 +30,14 @@ export const ReviewPage = () => {
   );
   const [createReview, { isLoading: isSubmitting }] =
     useCreateReviewMutation();
+  const [updateReview, { isLoading: isUpdating }] = useUpdateReviewMutation();
+  const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
+  
+  const { data: myReview } = useGetMyReviewQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  
+  const hasExistingReview = !!myReview;
 
   const selectVariant = (text) => {
     const length = text?.length || 0;
@@ -40,6 +55,7 @@ export const ReviewPage = () => {
         user: item.user?.username || item.user?.email || "Пользователь",
         avatarUrl: item.user?.img_url || null,
         variant: selectVariant(item.content),
+        userId: item.user?.id,
       }));
     }
     return [];
@@ -49,25 +65,47 @@ export const ReviewPage = () => {
 
   const handleAddReview = async ({ stars, content }) => {
     setFormError("");
-    const session = getSession();
-    if (!session?.accessToken) {
+    if (!isAuthenticated) {
       setFormError("Для отправки отзыва необходимо войти.");
       return false;
     }
 
     try {
-      await createReview({ stars, content }).unwrap();
+      if (hasExistingReview) {
+        await updateReview({ 
+          reviewId: myReview.id, 
+          stars, 
+          content 
+        }).unwrap();
+      } else {
+        await createReview({ stars, content }).unwrap();
+      }
       setModalActive(false);
       refetch();
       return true;
     } catch (err) {
       const detail = err?.data?.detail;
-      const message =
-        (typeof detail === "string" && detail) ||
-        err?.error ||
-        "Не удалось отправить отзыв.";
+      let message = "Не удалось отправить отзыв.";
+      
+      if (typeof detail === "object" && detail?.msg) {
+        message = detail.msg;
+      } else if (typeof detail === "string") {
+        message = detail;
+      } else if (err?.error) {
+        message = err.error;
+      }
+      
       setFormError(message);
       return false;
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await deleteReview(reviewId).unwrap();
+      refetch();
+    } catch (err) {
+      alert("Не удалось удалить отзыв");
     }
   };
 
@@ -75,9 +113,11 @@ export const ReviewPage = () => {
     <div className="reviews-page">
       <h1 className="reviews-title">Отзывы Пользователей</h1>
       <div className="reviews-actions">
-        <button className="review-button" onClick={() => setModalActive(true)}>
-          Оставить отзыв
-        </button>
+        {isAuthenticated && (
+          <button className="review-button" onClick={() => setModalActive(true)}>
+            {hasExistingReview ? "Редактировать отзыв" : "Оставить отзыв"}
+          </button>
+        )}
         {isError && (
           <span className="reviews-error">
             Не удалось загрузить отзывы, попробуйте позже.
@@ -99,11 +139,15 @@ export const ReviewPage = () => {
         {visibleReviews.map((review) => (
           <ReviewCard
             key={review.id}
+            reviewId={review.id}
             stars={review.stars}
             text={review.text}
             user={review.user}
             avatarUrl={review.avatarUrl}
             variant={review.variant}
+            isOwner={isAuthenticated && currentUserId === review.userId}
+            onDelete={handleDeleteReview}
+            onEdit={() => setModalActive(true)}
           />
         ))}
       </div>
@@ -121,10 +165,15 @@ export const ReviewPage = () => {
       <Modal active={modalActive} setActive={setModalActive}>
         <ReviewForm
           onSubmit={handleAddReview}
-          loading={isSubmitting}
+          loading={isSubmitting || isUpdating}
           errorMessage={formError}
+          initialData={hasExistingReview ? myReview : null}
+          isEdit={hasExistingReview}
         />
       </Modal>
     </div>
   );
 };
+
+// ✅ Default export для lazy loading
+export default ReviewPage;

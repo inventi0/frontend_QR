@@ -7,6 +7,10 @@ export const ReviewCard = ({
   user,
   avatarUrl,
   variant = "default",
+  reviewId,
+  isOwner = false,
+  onDelete,
+  onEdit,
 }) => {
   const safeAvatar =
     avatarUrl ||
@@ -31,8 +35,24 @@ export const ReviewCard = ({
     );
   };
 
+  const handleDelete = () => {
+    if (window.confirm("Вы уверены, что хотите удалить этот отзыв?")) {
+      onDelete?.(reviewId);
+    }
+  };
+
   return (
     <div className={`review-card ${variant}`}>
+      {isOwner && (
+        <div className="review-actions">
+          <button className="edit-review-btn" onClick={onEdit} title="Редактировать отзыв">
+            Редактировать
+          </button>
+          <button className="delete-review-btn" onClick={handleDelete} title="Удалить отзыв">
+            Удалить
+          </button>
+        </div>
+      )}
       <div className="stars">{renderStars()}</div>
       <div className="text">{text}</div>
       <div className="user-info">

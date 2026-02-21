@@ -141,15 +141,19 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
             </div>
           </div>
         )}
-        {step === 1 && <ShirtSelection onNext={handleNext} />}
+        {step === 1 && <ShirtSelection onNext={handleNext} onClose={() => setModalActive(false)} />}
         {step === 2 && selection && (
           <OrderForm
             selected={selection}
             isPreorder={selection.type === "preorder"}
             onSuccess={() => setModalActive(false)}
+            onClose={() => setModalActive(false)}
           />
         )}
       </Modal>
     </div>
   );
 };
+
+// ✅ Default export для lazy loading
+export default AssortmentPage;

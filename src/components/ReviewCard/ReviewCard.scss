@@ -10,6 +10,7 @@
   gap: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   height: 100%;
+  position: relative;
 
   .stars {
     font-size: 20px;
@@ -75,4 +76,63 @@
 
 .star-empty {
   color: #5a5a5a;
+}
+
+.review-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.edit-review-btn,
+.delete-review-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.edit-review-btn {
+  background: rgba(95, 214, 255, 0.15);
+  border-color: rgba(95, 214, 255, 0.3);
+  color: #5fd6ff;
+
+  &:hover {
+    background: rgba(95, 214, 255, 0.25);
+    border-color: rgba(95, 214, 255, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(95, 214, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.delete-review-btn {
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.3);
+  color: #ff453a;
+
+  &:hover {
+    background: rgba(255, 69, 58, 0.25);
+    border-color: rgba(255, 69, 58, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }

@@ -3,7 +3,7 @@ import "./Order.scss";
 import { useGetMeQuery } from "../../api/authApi";
 import { useListUserTemplatesQuery } from "../../api/accountApi";
 
-export const ShirtSelection = ({ onNext }) => {
+export const ShirtSelection = ({ onNext, onClose }) => {
   const [selectedColor, setSelectedColor] = useState("white");
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
@@ -39,6 +39,14 @@ export const ShirtSelection = ({ onNext }) => {
 
   return (
     <div className="modal-panel shirt-selection">
+      <button 
+        type="button" 
+        className="close-btn" 
+        onClick={onClose}
+        aria-label="Закрыть"
+      >
+        ×
+      </button>
       <h2>Выберите футболку и шаблон</h2>
       <div className="shirt-options">
         <div
