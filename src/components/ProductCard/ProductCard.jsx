@@ -30,7 +30,7 @@ export const ProductCard = ({
         </div>
       </div>
 
-      {isComingSoon && <div className="product-badge">Coming soon</div>}
+      {isComingSoon && <div className="product-badge">Скоро</div>}
     </div>
   );
 };

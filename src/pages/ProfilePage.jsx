@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "./ProfilePage.scss";
 import {
   useGetMeQuery,
@@ -48,6 +49,16 @@ export const ProfilePage = () => {
   const { data: me, isLoading: isMeLoading, isError: isMeError } =
     useGetMeQuery();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-scroll to #orders when navigating from OrderSuccess
+  useEffect(() => {
+    if (location.hash === "#orders") {
+      setTimeout(() => {
+        document.getElementById("orders")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, [location.hash]);
 
   const userId = me?.id;
 
@@ -379,7 +390,7 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      <div className="orders-section">
+      <div className="orders-section" id="orders">
         <div className="card-header">
           <h3>Ваши заказы</h3>
           {isOrdersLoading && <span className="muted">Загружаем...</span>}

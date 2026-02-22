@@ -4,6 +4,7 @@ import "./AssortmentPage.scss";
 import { Modal } from "../components/Modal/Modal";
 import { ShirtSelection } from "../components/Order/ShirtSelection";
 import { OrderForm } from "../components/Order/OrderForm";
+import { OrderSuccess } from "../components/Order/OrderSuccess";
 import "../components/Auth/AuthModal.scss";
 import { useGetMeQuery } from "../api/authApi";
 import { useGetUserQrQuery } from "../api/accountApi";
@@ -14,7 +15,7 @@ const leftColumnProducts = [
     title: "Футболка",
     image:
       "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/tshirt.png",
-    description: "Сидят, хорошо им наверное",
+    description: "Классическая футболка с вашим дизайном",
     height: 619.35,
     available: true,
   },
@@ -23,7 +24,7 @@ const leftColumnProducts = [
     title: "Шорты",
     image:
       "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shorts.png",
-    description: "Стоят, хорошо им наверное",
+    description: "Удобные шорты на каждый день",
     height: 937,
     available: false,
   },
@@ -35,7 +36,7 @@ const rightColumnProducts = [
     title: "Худи",
     image:
       "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/hoodie.png",
-    description: "Стоят, хорошо им наверное",
+    description: "Худи для комфорта и стиля",
     height: 937,
     available: false,
   },
@@ -44,7 +45,7 @@ const rightColumnProducts = [
     title: "Кепки",
     image:
       "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/caps.png",
-    description: "Сидят, хорошо им наверное",
+    description: "Стильная кепка с принтом",
     height: 619.35,
     available: false,
   },
@@ -55,9 +56,11 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
   const [step, setStep] = useState(1);
   const [selection, setSelection] = useState(null);
   const [chosenProduct, setChosenProduct] = useState(null);
+  const [orderResult, setOrderResult] = useState(null);
   const { data: me } = useGetMeQuery();
   const userId = me?.id;
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
+
   const handleNext = (selectedData) => {
     setSelection({
       ...selectedData,
@@ -66,6 +69,22 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
       qrId: qrData?.qr_id,
     });
     setStep(2);
+  };
+
+  const handleBack = () => {
+    setStep(1);
+  };
+
+  const handleOrderSuccess = (result) => {
+    setOrderResult(result);
+    setStep(3);
+  };
+
+  const handleClose = () => {
+    setModalActive(false);
+    setStep(1);
+    setSelection(null);
+    setOrderResult(null);
   };
 
   const openAuthInfo = () => {
@@ -91,7 +110,7 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
                   return;
                 }
                 setChosenProduct(product);
-                setModalActive(!modalActive);
+                setModalActive(true);
                 setStep(1);
               }}
             />
@@ -108,13 +127,13 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
         </div>
       </div>
 
-      <Modal active={modalActive} setActive={setModalActive}>
+      <Modal active={modalActive} setActive={handleClose}>
         {step === 0 && (
           <div className="auth-modal">
             <div className="auth-card">
               <h1 className="auth-title">Нужна авторизация</h1>
               <p className="auth-subtitle">
-                Войдите или зарегистрируйтесь, чтобы оформить заказ на футболку.
+                Войдите или зарегистрируйтесь, чтобы оформить заказ.
               </p>
               <div className="auth-actions">
                 <button
@@ -141,13 +160,26 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
             </div>
           </div>
         )}
-        {step === 1 && <ShirtSelection onNext={handleNext} onClose={() => setModalActive(false)} />}
+        {step === 1 && (
+          <ShirtSelection
+            onNext={handleNext}
+            onClose={handleClose}
+            productId={chosenProduct?.id || 1}
+          />
+        )}
         {step === 2 && selection && (
           <OrderForm
             selected={selection}
             isPreorder={selection.type === "preorder"}
-            onSuccess={() => setModalActive(false)}
-            onClose={() => setModalActive(false)}
+            onSuccess={handleOrderSuccess}
+            onBack={handleBack}
+            onClose={handleClose}
+          />
+        )}
+        {step === 3 && (
+          <OrderSuccess
+            orderResult={orderResult}
+            onClose={handleClose}
           />
         )}
       </Modal>

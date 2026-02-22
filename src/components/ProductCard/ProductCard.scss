@@ -55,8 +55,8 @@
   /* 12px (Rule 1: 24-12=12) */
   /* 24px/26px outer */
   z-index: 3;
-  width: 330px;
-  height: 64px;
+  right: 12px;
+  max-width: calc(100% - 24px);
 }
 
 .product-title {
