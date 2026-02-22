@@ -75,10 +75,28 @@ export const accountApi = createApi({
           : [{ type: "Orders", id: "LIST" }],
     }),
     createOrder: builder.mutation({
-      query: ({ items }) => ({
+      query: ({
+        items,
+        contact_info,
+        country,
+        city,
+        first_name,
+        last_name,
+        delivery_address,
+        zip_code,
+      }) => ({
         url: "/orders",
         method: "POST",
-        body: { items },
+        body: {
+          items,
+          contact_info,
+          country,
+          city,
+          first_name,
+          last_name,
+          delivery_address,
+          zip_code,
+        },
         headers: { "Content-Type": "application/json" },
       }),
       invalidatesTags: [{ type: "Orders", id: "LIST" }],

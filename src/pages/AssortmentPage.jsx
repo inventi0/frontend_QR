@@ -8,46 +8,32 @@ import { OrderSuccess } from "../components/Order/OrderSuccess";
 import "../components/Auth/AuthModal.scss";
 import { useGetMeQuery } from "../api/authApi";
 import { useGetUserQrQuery } from "../api/accountApi";
+import { useListProductsQuery } from "../api/productApi";
+import { groupProductsByType } from "../utils/productCardMap";
 
-const leftColumnProducts = [
+/**
+ * Planned products — teasers for items not yet on backend.
+ * String IDs prevent any conflict with numeric backend IDs.
+ * These cards NEVER open the purchase modal.
+ */
+const PLANNED_PRODUCTS = [
   {
-    id: 1,
-    title: "Футболка",
-    image:
-      "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/tshirt.png",
-    description: "Классическая футболка с вашим дизайном",
-    height: 619.35,
-    available: true,
-  },
-  {
-    id: 2,
+    id: "planned-shorts",
     title: "Шорты",
-    image:
-      "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shorts.png",
+    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shorts.png",
     description: "Удобные шорты на каждый день",
-    height: 937,
-    available: false,
   },
-];
-
-const rightColumnProducts = [
   {
-    id: 3,
+    id: "planned-hoodie",
     title: "Худи",
-    image:
-      "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/hoodie.png",
+    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/hoodie.png",
     description: "Худи для комфорта и стиля",
-    height: 937,
-    available: false,
   },
   {
-    id: 4,
+    id: "planned-cap",
     title: "Кепки",
-    image:
-      "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/caps.png",
+    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/caps.png",
     description: "Стильная кепка с принтом",
-    height: 619.35,
-    available: false,
   },
 ];
 
@@ -55,17 +41,30 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
   const [modalActive, setModalActive] = useState(false);
   const [step, setStep] = useState(1);
   const [selection, setSelection] = useState(null);
-  const [chosenProduct, setChosenProduct] = useState(null);
+  const [chosenProductId, setChosenProductId] = useState(null);
   const [orderResult, setOrderResult] = useState(null);
   const { data: me } = useGetMeQuery();
   const userId = me?.id;
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
 
+  // Fetch real products from backend
+  const {
+    data: rawProducts,
+    isLoading,
+    isError,
+    refetch,
+  } = useListProductsQuery({ limit: 50, offset: 0 });
+
+  const realProducts = groupProductsByType(rawProducts);
+
+  // Filter out planned products whose type already exists on backend
+  const realTypes = new Set(realProducts.map((p) => p.title));
+  const plannedFiltered = PLANNED_PRODUCTS.filter((p) => !realTypes.has(p.title));
+
   const handleNext = (selectedData) => {
     setSelection({
       ...selectedData,
-      productId: chosenProduct?.id || 1,
-      productName: chosenProduct?.title || "Футболка",
+      productId: chosenProductId,
       qrId: qrData?.qr_id,
     });
     setStep(2);
@@ -84,6 +83,7 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
     setModalActive(false);
     setStep(1);
     setSelection(null);
+    setChosenProductId(null);
     setOrderResult(null);
   };
 
@@ -96,36 +96,64 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
     <div className="assortment-page">
       <h1 className="assortment-title">Ассортимент</h1>
 
-      <div className="assortment-gallery">
-        <div className="left-column">
-          {leftColumnProducts.map((product) => (
+      {/* Loading State */}
+      {isLoading && (
+        <div className="assortment-loading">
+          <div className="spinner-ring" />
+          <p>Загружаем товары...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="assortment-error">
+          <p>Не удалось загрузить товары</p>
+          <button className="retry-btn" onClick={refetch}>Повторить</button>
+        </div>
+      )}
+
+      {/* Products Grid (backend + planned teasers) */}
+      {!isLoading && !isError && (
+        <div className="assortment-grid">
+          {/* Real backend products — purchasable */}
+          {realProducts.map((card) => (
             <ProductCard
-              key={product.id}
-              {...product}
-              isComingSoon={!product.available}
+              key={card.id}
+              title={card.title}
+              image={card.image}
+              description={card.description}
+              isComingSoon={false}
               onClickHandler={() => {
-                if (!product.available) return;
                 if (!isAuthenticated) {
                   openAuthInfo();
                   return;
                 }
-                setChosenProduct(product);
+                setChosenProductId(card.id);
                 setModalActive(true);
                 setStep(1);
               }}
             />
           ))}
-        </div>
-        <div className="right-column">
-          {rightColumnProducts.map((product) => (
+
+          {/* Planned teaser cards — NOT purchasable */}
+          {plannedFiltered.map((card) => (
             <ProductCard
-              key={product.id}
-              {...product}
-              isComingSoon={!product.available}
+              key={card.id}
+              title={card.title}
+              image={card.image}
+              description={card.description}
+              isComingSoon={true}
             />
           ))}
         </div>
-      </div>
+      )}
+
+      {/* Empty State (no backend + no planned) */}
+      {!isLoading && !isError && realProducts.length === 0 && plannedFiltered.length === 0 && (
+        <div className="assortment-empty">
+          <p>Пока нет товаров</p>
+        </div>
+      )}
 
       <Modal active={modalActive} setActive={handleClose}>
         {step === 0 && (
@@ -160,11 +188,11 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
             </div>
           </div>
         )}
-        {step === 1 && (
+        {step === 1 && chosenProductId && (
           <ShirtSelection
             onNext={handleNext}
             onClose={handleClose}
-            productId={chosenProduct?.id || 1}
+            productId={chosenProductId}
           />
         )}
         {step === 2 && selection && (

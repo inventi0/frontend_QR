@@ -11,9 +11,7 @@ export const ProductCard = ({
   onClickHandler,
   isComingSoon = false,
 }) => {
-  const style = {
-    height: `${height}px`,
-  };
+  const style = height ? { height: `${height}px` } : {};
 
   return (
     <div

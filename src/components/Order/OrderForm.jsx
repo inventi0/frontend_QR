@@ -48,11 +48,18 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onBack, onClose }) 
     };
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (data) => {
     setSubmitError("");
     try {
       const result = await createOrder({
         items: [{ product_id: productId, quantity: 1 }],
+        contact_info: data.contact.trim(),
+        country: data.country.trim(),
+        city: data.city.trim(),
+        first_name: data.firstName.trim(),
+        last_name: data.lastName.trim(),
+        delivery_address: data.address.trim(),
+        zip_code: data.postal.trim(),
       }).unwrap();
       if (templateId && qrId) {
         try {

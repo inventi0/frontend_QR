@@ -7,7 +7,9 @@ export const ShirtSelection = ({ onNext, onClose, productId }) => {
   const [selectedColor, setSelectedColor] = useState("white");
   const [selectedSize, setSelectedSize] = useState("M");
 
-  const { data: product, isLoading: isPriceLoading } = useGetProductQuery(productId);
+  const { data: product, isLoading: isPriceLoading } = useGetProductQuery(productId, {
+    skip: !productId,
+  });
   const basePrice = product?.price;
   const preorderPrice = basePrice != null ? Math.round(basePrice * 0.8) : null;
 
