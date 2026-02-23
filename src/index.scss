@@ -2,7 +2,17 @@
 
 @font-face {
   font-family: "Bicubik";
-  src: local("Bicubik"), url("https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/fonts/Bicubik.woff") format("woff");
+  /* Local copy (place one or more of these files in public/fonts/):
+     Bicubik.woff  ← лучший формат
+     Bicubik.ttf   ← true type
+     Bicubik.otf   ← open type
+     Если файл отсутствует, удалите соответствующую строку `url(...)` из src,
+     иначе dev-сервер отдает HTML и браузер пишет «rejected by sanitizer».
+  */
+  src: local("Bicubik"),
+       /*url("/fonts/Bicubik.woff") format("woff"),*/
+       url("/fonts/Bicubik.ttf") format("truetype"),
+       url("/fonts/Bicubik.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -10,7 +20,17 @@
 
 @font-face {
   font-family: "Akony";
-  src: local("Akony"), url("https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/fonts/AKONY.woff") format("woff");
+  /* Local copy (place one or more of these files in public/fonts/):
+     AKONY.woff  ← лучший формат
+     AKONY.ttf   ← true type
+     AKONY.otf   ← open type
+     У вас, вероятно, есть только otf; в таком случае закомментируйте
+     или уберите строки с `.woff` и `.ttf`.
+  */
+  src: local("Akony"),
+       /*url("/fonts/AKONY.woff") format("woff"),*/
+       /*url("/fonts/AKONY.ttf") format("truetype"),*/
+       url("/fonts/AKONY.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
