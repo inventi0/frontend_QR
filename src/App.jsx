@@ -20,6 +20,7 @@ const CreatorPage = lazy(() => import("./pages/CreatorPage"));
 const AssortmentPage = lazy(() => import("./pages/AssortmentPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const OfertaPage = lazy(() => import("./pages/OfertaPage"));
+const LegalInfoPage = lazy(() => import("./pages/LegalInfoPage"));
 
 // Loading компонент
 const PageLoader = () => (
@@ -85,7 +86,7 @@ function App() {
           <Route path="/reviews" element={<ReviewPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/oferta" element={<OfertaPage />} />
-          <Route path="/offer" element={<OfertaPage />} />
+          <Route path="/legal-info" element={<LegalInfoPage />} />
         <Route
             path="/profile" 
           element={

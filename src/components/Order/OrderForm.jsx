@@ -178,7 +178,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
             <span>
               Я согласен с условиями{' '}
               <a 
-                href="/oferta" 
+                href="/legal-info#offer" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ color: '#667eea', textDecoration: 'underline' }}
