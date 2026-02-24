@@ -10,6 +10,7 @@ import {
   useListUserTemplatesQuery,
   useSetQrTemplateMutation,
   useUpdateTemplateMutation,
+  useUpdateTemplateFileMutation,
 } from "../api/accountApi";
 import tshirtMockup from "../assets/tshirt_mockup.png";
 
@@ -21,15 +22,16 @@ export function CreatorPage() {
   const [showGrid] = useState(false);
   const [activeObject, setActiveObject] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  const location = useLocation();
+  const incomingTemplate = location.state?.template || null;
+  const [currentTemplateId, setCurrentTemplateId] = useState(incomingTemplate?.id || null);
   const [theme] = useState('dark');
   const [templateLoading, setTemplateLoading] = useState(false);
   const [templateError, setTemplateError] = useState(null);
   const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
   const [layersSnapshot, setLayersSnapshot] = useState([]);
   const canvasComponentRef = useRef(null);
-  const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const incomingTemplate = location.state?.template || null;
   const incomingTemplateUrl =
     incomingTemplate?.file_url ||
     location.state?.templateUrl ||
@@ -43,9 +45,12 @@ export function CreatorPage() {
     { userId, includeGlobal: true, limit: 50, offset: 0 },
     { skip: !userId }
   );
-  const [createTemplate, { isLoading: isSavingTemplate }] = useCreateTemplateMutation();
+  const [createTemplate, { isLoading: isCreating }] = useCreateTemplateMutation();
   const [setQrTemplate] = useSetQrTemplateMutation();
-  const [updateTemplate] = useUpdateTemplateMutation();
+  const [updateTemplate, { isLoading: isUpdating }] = useUpdateTemplateMutation();
+  const [updateTemplateFile, { isLoading: isUpdatingFile }] = useUpdateTemplateFileMutation();
+
+  const isSavingTemplate = isCreating || isUpdating || isUpdatingFile;
 
   useEffect(() => {
     document.body.className = theme === 'light' ? 'light-theme' : '';
@@ -156,22 +161,28 @@ export function CreatorPage() {
     canvasComponentRef.current.loadFromUrl(tpl.file_url).catch(() => { });
   }, []);
 
-  const handleSaveTemplate = useCallback(async () => {
+  const handleSaveAsTemplate = useCallback(async () => {
     if (!canvasComponentRef.current || !userId) {
       alert('Сохранение доступно только после входа.');
       return;
     }
 
     const defaultName = `Дизайн ${new Date().toLocaleDateString('ru-RU')}`;
-    const templateName = prompt('Введите название шаблона:', defaultName);
+    const templateName = prompt('Введите название нового шаблона:', defaultName);
 
-    if (!templateName) {
+    if (!templateName || !templateName.trim()) {
+      return;
+    }
+
+    if (templateName.length > 60) {
+      alert('Название слишком длинное (максимум 60 символов).');
       return;
     }
 
     const blob = await canvasComponentRef.current.toBlob();
     if (!blob) return;
     const file = new File([blob], 'template.png', { type: 'image/png' });
+
     try {
       // Step 1: Upload preview PNG
       const saved = await createTemplate({
@@ -179,12 +190,14 @@ export function CreatorPage() {
         name: templateName.trim(),
       }).unwrap();
 
+      const newId = saved.id;
+
       // Step 2: Export scene and persist in description
       try {
         const scene = canvasComponentRef.current.exportScene();
         const sceneJson = JSON.stringify(scene);
         await updateTemplate({
-          templateId: saved.id,
+          templateId: newId,
           description: sceneJson,
         }).unwrap();
       } catch (sceneErr) {
@@ -193,17 +206,77 @@ export function CreatorPage() {
 
       if (incomingQrId) {
         try {
-          await setQrTemplate({ template_id: saved.id }).unwrap();
+          await setQrTemplate({ template_id: newId }).unwrap();
         } catch (err) {
           console.error("Attach template failed", err);
         }
       }
-      alert('Шаблон сохранён в вашем списке.');
+      setCurrentTemplateId(newId);
+      setIsDirty(false);
+      alert('Шаблон сохранён');
     } catch (error) {
       console.error(error);
-      alert('Не удалось сохранить шаблон.');
+      alert('Не удалось сохранить шаблон. Попробуйте снова.');
     }
   }, [createTemplate, updateTemplate, userId, incomingQrId, setQrTemplate]);
+
+  const handleSaveTemplate = useCallback(async () => {
+    if (!canvasComponentRef.current || !userId) {
+      alert('Сохранение доступно только после входа.');
+      return;
+    }
+
+    // Если нет текущего ID, то "Сохранить" работает как "Сохранить как..." (создание нового)
+    if (!currentTemplateId) {
+      return handleSaveAsTemplate();
+    }
+
+    if (!isDirty) {
+      alert('Нет изменений для сохранения.');
+      return;
+    }
+
+    const confirmUpdate = window.confirm(`Обновить шаблон «${incomingTemplate?.name || 'Без названия'}»? Это перезапишет текущую версию.`);
+    if (!confirmUpdate) return;
+
+    const blob = await canvasComponentRef.current.toBlob();
+    if (!blob) return;
+    const file = new File([blob], 'template.png', { type: 'image/png' });
+
+    try {
+      // Step 1: Update preview PNG
+      await updateTemplateFile({
+        templateId: currentTemplateId,
+        file,
+      }).unwrap();
+
+      // Step 2: Export scene and persist in description
+      try {
+        const scene = canvasComponentRef.current.exportScene();
+        const sceneJson = JSON.stringify(scene);
+        await updateTemplate({
+          templateId: currentTemplateId,
+          name: incomingTemplate?.name || 'Без названия',
+          description: sceneJson,
+        }).unwrap();
+      } catch (sceneErr) {
+        console.warn('Сцена не сохранена, шаблон доступен только как изображение', sceneErr);
+      }
+
+      if (incomingQrId) {
+        try {
+          await setQrTemplate({ template_id: currentTemplateId }).unwrap();
+        } catch (err) {
+          console.error("Attach template failed", err);
+        }
+      }
+      setIsDirty(false);
+      alert('Шаблон обновлён');
+    } catch (error) {
+      console.error(error);
+      alert('Не удалось обновить шаблон. Попробуйте снова.');
+    }
+  }, [updateTemplate, updateTemplateFile, userId, incomingQrId, setQrTemplate, currentTemplateId, isDirty, incomingTemplate, handleSaveAsTemplate]);
 
   // --- Template / Scene loading ---
   useEffect(() => {
@@ -379,7 +452,9 @@ export function CreatorPage() {
             downloadImage={handleDownloadImage}
             onImportImage={handleImportImage}
             onSaveTemplate={handleSaveTemplate}
+            onSaveAsTemplate={handleSaveAsTemplate}
             savingTemplate={isSavingTemplate}
+            isEditMode={!!currentTemplateId}
             templateOptions={templates || []}
             onLoadTemplateFromCloud={handleLoadTemplateFromCloud}
             isReadOnly={!isAuthenticated}

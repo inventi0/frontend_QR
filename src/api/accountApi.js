@@ -134,6 +134,21 @@ export const accountApi = createApi({
         { type: "Templates", id: "LIST" },
       ],
     }),
+    updateTemplateFile: builder.mutation({
+      query: ({ templateId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/templates/${templateId}/file`,
+          method: "PATCH",
+          body: formData,
+        };
+      },
+      invalidatesTags: (_, __, { templateId }) => [
+        { type: "Templates", id: templateId },
+        { type: "Templates", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -147,4 +162,5 @@ export const {
   useCreateTemplateMutation,
   useDeleteTemplateMutation,
   useUpdateTemplateMutation,
+  useUpdateTemplateFileMutation,
 } = accountApi;

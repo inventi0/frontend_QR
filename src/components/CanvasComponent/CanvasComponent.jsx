@@ -161,19 +161,38 @@ const CanvasComponent = forwardRef(
           if (layer.canvas) {
             ctxToRenderTo.drawImage(layer.canvas, 0, 0, logicalWidth, logicalHeight);
           }
-        } else if (layer.type === "image" && layer.imgEl) {
+        } else if (layer.type === "image") {
           ctxToRenderTo.save();
           // Translate to center of image, rotate, draw, restore
           ctxToRenderTo.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
           ctxToRenderTo.rotate(layer.rotation * Math.PI / 180);
           ctxToRenderTo.globalAlpha = layer.opacity ?? 1;
-          ctxToRenderTo.drawImage(
-            layer.imgEl,
-            -layer.w / 2,
-            -layer.h / 2,
-            layer.w,
-            layer.h
-          );
+
+          if (layer.imgEl) {
+            ctxToRenderTo.drawImage(
+              layer.imgEl,
+              -layer.w / 2,
+              -layer.h / 2,
+              layer.w,
+              layer.h
+            );
+          } else if (layer.loadError) {
+            // Draw placeholder
+            ctxToRenderTo.fillStyle = "rgba(255, 0, 0, 0.1)";
+            ctxToRenderTo.fillRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
+            ctxToRenderTo.strokeStyle = "red";
+            ctxToRenderTo.lineWidth = 2;
+            ctxToRenderTo.setLineDash([5, 5]);
+            ctxToRenderTo.strokeRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
+            ctxToRenderTo.setLineDash([]);
+
+            ctxToRenderTo.fillStyle = "red";
+            ctxToRenderTo.font = "14px sans-serif";
+            ctxToRenderTo.textAlign = "center";
+            ctxToRenderTo.textBaseline = "middle";
+            ctxToRenderTo.fillText("⚠ Ошибка", 0, 0);
+          }
+
           ctxToRenderTo.restore();
         }
       });
@@ -547,7 +566,7 @@ const CanvasComponent = forwardRef(
       if (!url) throw new Error('URL не указан');
 
       // Try fetch with auth token (handles CORS + protected assets)
-      let objectUrl = null;
+      let finalSrc = null;
       let usedBlob = false;
       try {
         const session = getSession();
@@ -558,11 +577,18 @@ const CanvasComponent = forwardRef(
         const res = await fetch(url, { headers });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        objectUrl = URL.createObjectURL(blob);
-        usedBlob = true;
+
+        // Convert to dataURL instead of objectURL to preserve persistence
+        finalSrc = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        usedBlob = false; // We don't need to revoke a dataURL
       } catch {
         // Fallback: try direct img.src (for external/public URLs)
-        objectUrl = url;
+        finalSrc = url;
         usedBlob = false;
       }
 
@@ -570,14 +596,14 @@ const CanvasComponent = forwardRef(
         const img = new Image();
         img.onload = () => {
           addImageLayer(img);
-          if (usedBlob) URL.revokeObjectURL(objectUrl);
+          if (usedBlob) URL.revokeObjectURL(finalSrc);
           resolve();
         };
         img.onerror = () => {
-          if (usedBlob) URL.revokeObjectURL(objectUrl);
+          if (usedBlob) URL.revokeObjectURL(finalSrc);
           reject(new Error('Не удалось загрузить изображение'));
         };
-        img.src = objectUrl;
+        img.src = finalSrc;
       });
     }, [addImageLayer]);
 
@@ -1525,7 +1551,7 @@ const CanvasComponent = forwardRef(
           // Create image layer shell, load image async
           const layer = {
             id: ld.id, type: 'image', name: ld.name || 'Изображение', visible: ld.visible !== false,
-            src: ld.src, imgEl: null,
+            src: ld.src, imgEl: null, loadError: false,
             x: ld.x || 0, y: ld.y || 0, w: ld.w || 100, h: ld.h || 100,
             rotation: ld.rotation || 0, opacity: ld.opacity ?? 1,
             naturalW: ld.naturalW || ld.w || 100, naturalH: ld.naturalH || ld.h || 100,
@@ -1542,14 +1568,17 @@ const CanvasComponent = forwardRef(
                 if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
                 let objectUrl = ld.src;
                 let usedBlob = false;
-                try {
-                  const res = await fetch(ld.src, { headers });
-                  if (res.ok) {
-                    const blob = await res.blob();
-                    objectUrl = URL.createObjectURL(blob);
-                    usedBlob = true;
-                  }
-                } catch { /* fallback to direct src */ }
+
+                if (!ld.src.startsWith('data:')) {
+                  try {
+                    const res = await fetch(ld.src, { headers });
+                    if (res.ok) {
+                      const blob = await res.blob();
+                      objectUrl = URL.createObjectURL(blob);
+                      usedBlob = true;
+                    }
+                  } catch { /* fallback to direct src */ }
+                }
 
                 await new Promise((resolve, reject) => {
                   const img = new Image();
@@ -1566,7 +1595,10 @@ const CanvasComponent = forwardRef(
                   };
                   img.src = objectUrl;
                 });
-              } catch { /* image failed to load, layer stays without imgEl */ }
+              } catch {
+                layer.loadError = true;
+                console.warn(`Не удалось загрузить слой-изображение ${layer.id}`);
+              }
             })();
             imageLoadPromises.push(p);
           }
@@ -1575,6 +1607,11 @@ const CanvasComponent = forwardRef(
 
       // Wait for all bitmaps/images to load
       await Promise.all(imageLoadPromises);
+
+      const hasErrors = layersRef.current.some(l => l.loadError);
+      if (hasErrors) {
+        setTimeout(() => alert("Некоторые изображения не удалось восстановить (возможно, они были временными). Слой сохранён в виде заглушки."), 100);
+      }
 
       // Set active paint layer
       if (scene.activePaintLayerId) {

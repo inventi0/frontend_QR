@@ -56,7 +56,9 @@ function Toolbar({
   clearCanvas,
   onImportImage,
   onSaveTemplate,
+  onSaveAsTemplate,
   savingTemplate,
+  isEditMode = false,
   templateOptions = [],
   onLoadTemplateFromCloud,
   isReadOnly = false,
@@ -413,16 +415,30 @@ function Toolbar({
             )}
           </div>
 
-          <button
-            aria-label="Сохранить"
-            title="Сохранить"
-            className={`${styles.actionButton} ${styles.saveButton}`}
-            onClick={onSaveTemplate}
-            disabled={savingTemplate || isReadOnly}
-          >
-            <FaSave />
-            <span className={styles.iconLabel}>Сохр.</span>
-          </button>
+          <div className={styles.saveButtonGroup} style={{ display: 'flex', gap: '8px' }}>
+            <button
+              aria-label="Сохранить"
+              title="Сохранить"
+              className={`${styles.actionButton} ${styles.saveButton}`}
+              onClick={onSaveTemplate}
+              disabled={savingTemplate || isReadOnly}
+            >
+              <FaSave />
+              <span className={styles.iconLabel}>Сохр.</span>
+            </button>
+            {isEditMode && (
+              <button
+                aria-label="Сохранить как..."
+                title="Сохранить как..."
+                className={`${styles.actionButton} ${styles.saveButton}`}
+                onClick={onSaveAsTemplate}
+                disabled={savingTemplate || isReadOnly}
+              >
+                <FaClone />
+                <span className={styles.iconLabel}>Как...</span>
+              </button>
+            )}
+          </div>
         </div>
 
       </div>
