@@ -305,10 +305,10 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
               required
             />
             <span>
-              Я согласен с условиями{" "}
-              <a
-                href="/oferta"
-                target="_blank"
+              Я согласен с условиями{' '}
+              <a 
+                href="/legal-info#offer" 
+                target="_blank" 
                 rel="noopener noreferrer"
               >
                 публичной оферты

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import "./Footer.scss";
 import { faqData } from "../../utils/data";
 import Phone from "../icons/Phone";
@@ -81,6 +82,9 @@ export const Footer = () => {
             <Mail />
             Eduard_III@mail.ru
           </a>
+          <Link to="/legal-info" className="footer__legal-link">
+            Правовая информация
+          </Link>
         </div>
       </div>
     </div>

@@ -21,6 +21,7 @@ const CreatorPage = lazy(() => import("./pages/CreatorPage"));
 const AssortmentPage = lazy(() => import("./pages/AssortmentPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const OfertaPage = lazy(() => import("./pages/OfertaPage"));
+const LegalInfoPage = lazy(() => import("./pages/LegalInfoPage"));
 
 // Loading компонент
 const PageLoader = () => (
@@ -71,6 +72,30 @@ function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
+      <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/creator" element={<CreatorPage />} />
+          <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
+          <Route path="/reviews" element={<ReviewPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/oferta" element={<OfertaPage />} />
+          <Route path="/legal-info" element={<LegalInfoPage />} />
+        <Route
+            path="/profile" 
+          element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile/:userId" 
+            element={<PublicProfilePage />} 
+          />
+        <Route
+          path="/range"
+          element={
+            <AssortmentPage
         {!hideHeaderFooter ? (
           <PageContainer>
             <Header
