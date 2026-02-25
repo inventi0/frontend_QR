@@ -49,18 +49,17 @@ export const RegistrationForm = ({ onClose }) => {
       return;
     }
 
-    if (!avatar) {
-      setError("Добавьте файл аватара — это требование API.");
-      return;
-    }
-
     try {
-      const user = await registerUser({
+      const payload = {
         email: formValues.email.trim(),
         username: formValues.username.trim(),
         password: formValues.password,
-        avatar,
-      }).unwrap();
+      };
+      if (avatar) {
+        payload.avatar = avatar;
+      }
+
+      const user = await registerUser(payload).unwrap();
 
       setSuccess(
         `Готово! Пользователь ${user.username ?? user.email} зарегистрирован. Теперь можно войти.`
@@ -74,8 +73,8 @@ export const RegistrationForm = ({ onClose }) => {
       const message = Array.isArray(detail)
         ? detail[0]?.msg
         : typeof detail === "string"
-        ? detail
-        : err?.error;
+          ? detail
+          : err?.error;
       setError(message || "Не удалось зарегистрироваться. Попробуйте ещё раз.");
     }
   };
@@ -132,14 +131,13 @@ export const RegistrationForm = ({ onClose }) => {
 
           <label className="auth-field auth-file-field">
             <div className="auth-file-label">
-              <span>Аватар</span>
-              <small>Обязателен по документации</small>
+              <span>Аватар (необязательно)</span>
+              <small>Можно добавить позже в профиле</small>
             </div>
             <input
               type="file"
               accept="image/*"
               onChange={handleAvatarChange}
-              required
             />
             {avatarPreview && (
               <div className="auth-file-preview">

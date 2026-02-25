@@ -1,9 +1,6 @@
 import { UsageCard } from "./UsageCard";
 import "./UsageScenarios.scss";
-import imgEditor from "../../assets/editor.png";
-import imgShirt from "../../assets/shirt.png";
-import imgCouple from "../../assets/couple.png";
-import imgQuestion from "../../assets/question.png";
+
 
 export const UsageScenarios = () => {
   return (

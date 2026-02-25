@@ -1,7 +1,7 @@
 /**
  * Tests for ErrorBoundary component
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ErrorBoundary from '../../components/ErrorBoundary/ErrorBoundary';
 
@@ -26,7 +26,7 @@ describe('ErrorBoundary', () => {
 
   it('should render error UI when child component throws', () => {
     // Подавляем console.error для чистоты вывода теста
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(
       <ErrorBoundary>
@@ -43,7 +43,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should show "Try again" button in error state', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(
       <ErrorBoundary>

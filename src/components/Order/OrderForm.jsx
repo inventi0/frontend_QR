@@ -2,11 +2,18 @@ import { useForm, FormProvider } from "react-hook-form";
 import CustomInput from "../UI/CustomInput/CustomInput";
 import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
 import "./Order.scss";
-import { useCreateOrderMutation, useSetQrTemplateMutation } from "../../api/accountApi";
-import { useGetProductQuery } from "../../api/productApi";
+import {
+  useCreateOrderMutation,
+  useSetQrTemplateMutation,
+  useCreatePaymentMutation,   // ← НОВОЕ
+} from "../../api/accountApi";
 import { useState } from "react";
+import { formatRub } from "../../utils/money";
+import { FaArrowLeft } from "react-icons/fa";
 
-export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
+export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
+  // ← НОВОЕ: Состояние для количества товара
+  const [quantity, setQuantity] = useState(1);
   const methods = useForm({
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -28,18 +35,17 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
     clearErrors,
     formState: { errors },
   } = methods;
+
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const [setQrTemplate] = useSetQrTemplateMutation();
+  const [createPayment] = useCreatePaymentMutation(); // ← ДЛЯ ПЛАТЕЖА
+
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;
   const qrId = selected?.qrId || null;
 
-  // ✅ Загружаем реальную цену продукта из backend
-  const { data: product } = useGetProductQuery(productId);
-  
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -51,33 +57,108 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
     };
   };
 
-  // TODO: После реализации задачи 2.1 (комбинации футболок) использовать правильный productId с учетом цвета и размера
-  // Пока используем цену из загруженного продукта или fallback 2499₽
-  const basePrice = product?.price || 2499;
-  const finalPrice = isPreorder ? Math.round(basePrice * 0.8) : basePrice;
+  const finalPrice = isPreorder ? 2499 * 0.8 : 2499;
+  
+  // ← НОВОЕ: Рассчитываем итоговую сумму с учётом количества
+  const totalAmount = finalPrice * quantity;
 
   const onSubmit = async (data) => {
     setSubmitError("");
     setSubmitSuccess("");
+
+    console.log("=== НАЧИНАЕМ ОФОРМЛЕНИЕ ===");
+    console.log("Введённые данные формы:", data);
+
     try {
-      await createOrder({
-        items: [{ product_id: productId, quantity: 1 }],
+      // -------------------------------
+      // 1) Создание заказа
+      // ← ИСПРАВЛЕНО: Теперь отправляем РЕАЛЬНОЕ количество
+      // -------------------------------
+      console.log("→ Отправляем createOrder:", {
+        items: [{ product_id: productId, quantity: quantity }],
+      });
+
+      const order = await createOrder({
+        items: [{ product_id: productId, quantity: quantity }],
       }).unwrap();
+
+      console.log("✓ createOrder успешен! Ответ:", order);
+
+      const orderId = order.id;
+
+      // -------------------------------
+      // 2) Привязка QR-шаблона
+      // -------------------------------
       if (templateId && qrId) {
+        console.log("→ Привязываем шаблон QR:", templateId);
         try {
           await setQrTemplate({ template_id: templateId }).unwrap();
+          console.log("✓ QR шаблон успешно привязан");
         } catch (err) {
-          console.error("Не удалось привязать шаблон к QR", err);
+          console.error("X Ошибка привязки QR:", err);
         }
+      } else {
+        console.log("Шаблон QR не требуется");
       }
-      setSubmitSuccess("Заказ создан!");
+
+      // -------------------------------
+      // 3) Создаём платёж через RTK Query
+      // ← ИСПРАВЛЕНО: Отправляем сумму с учётом количества
+      // -------------------------------
+      console.log("→ Создаём платёж через RTK Query:", {
+        order_id: orderId,
+        amount: totalAmount,
+      });
+
+      let accessToken = null;
+      try {
+        const raw = localStorage.getItem("session");
+        accessToken = raw ? JSON.parse(raw)?.accessToken : null;
+      } catch {
+        accessToken = null;
+      }
+
+      if (!accessToken) {
+        console.error("❌ Нет accessToken! Пользователь не авторизован");
+        setSubmitError("Вы не авторизованы");
+        return;
+      }
+
+      let payRes;
+      try {
+        payRes = await createPayment({
+          order_id: orderId,
+          amount: totalAmount,
+        }).unwrap();
+
+        console.log("✓ Ответ createPayment:", payRes);
+      } catch (err) {
+        console.error("❌ Ошибка createPayment:", err);
+        setSubmitError("Ошибка при создании платежа");
+        return;
+      }
+
+      if (!payRes?.redirect_url) {
+        console.error("❌ Нет redirect_url");
+        setSubmitError("Ошибка при создании платежа");
+        return;
+      }
+
+      console.log("✓ Редирект на YooKassa:", payRes.redirect_url);
+      window.location.href = payRes.redirect_url;
+
+      setSubmitSuccess("Заказ создан, переход к оплате...");
       onSuccess?.();
+
     } catch (err) {
+      console.error("=== ОШИБКА ПРИ ОПЛАТЕ ===");
+      console.error(err);
+
       const detail = err?.data?.detail;
       setSubmitError(
         (typeof detail === "string" && detail) ||
           err?.error ||
-          "Не удалось создать заказ"
+          "Не удалось создать заказ или платёж"
       );
     }
   };
@@ -85,21 +166,73 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
-        <button 
-          type="button" 
-          className="close-btn" 
+        <button
+          type="button"
+          className="close-btn"
           onClick={onClose}
           aria-label="Закрыть"
         >
           ×
         </button>
+
+        <button
+          type="button"
+          className="back-btn"
+          onClick={onBack}
+          aria-label="Назад к выбору"
+        >
+          <FaArrowLeft /> Назад
+        </button>
+
         <h2>Оформление заказа</h2>
 
-        <div className="summary">
+        <div className="order-summary">
           <img src={selected.tshirtImage} alt="Выбранная футболка" />
-          <div>
-            <span>Размер: {selected.size}</span>
-            <span>Принт: {selected.print}</span>
+          <div className="order-summary__details">
+            <div className="order-summary__row">
+              <span className="label">Цвет</span>
+              <span className="value">{selected.color || "—"}</span>
+            </div>
+            <div className="order-summary__row">
+              <span className="label">Размер</span>
+              <span className="value">{selected.size}</span>
+            </div>
+            <div className="order-summary__row order-summary__total">
+              <span className="label">Итого</span>
+              <span className="value">{formatRub(selected.finalPrice)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ← НОВОЕ: Поле для выбора количества */}
+        <div className="section">
+          <h3>Количество</h3>
+          <div className="quantity-control">
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="qty-btn"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="1"
+              max="99"
+              value={quantity}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10) || 1;
+                setQuantity(Math.max(1, Math.min(99, val)));
+              }}
+              className="qty-input"
+            />
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.min(99, quantity + 1))}
+              className="qty-btn"
+            >
+              +
+            </button>
           </div>
         </div>
 
@@ -119,6 +252,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
             error={errors.country?.message}
             {...registerWithClear("country", { required: "Обязательное поле" })}
           />
+
           <div className="inline">
             <CustomInput
               placeholder="Имя"
@@ -135,11 +269,13 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
               })}
             />
           </div>
+
           <CustomInput
             placeholder="Адрес доставки"
             error={errors.address?.message}
             {...registerWithClear("address", { required: "Обязательное поле" })}
           />
+
           <div className="inline">
             <CustomInput
               placeholder="Город"
@@ -162,18 +298,11 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
           />
         </div>
 
-        <div style={{ 
-          margin: '20px 0', 
-          padding: '16px', 
-          backgroundColor: '#f8f9fa', 
-          borderRadius: '8px',
-          fontSize: '14px'
-        }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+        <div className="offer-checkbox">
+          <label>
             <input
               type="checkbox"
               required
-              style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
             />
             <span>
               Я согласен с условиями{' '}
@@ -181,7 +310,6 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
                 href="/legal-info#offer" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                style={{ color: '#667eea', textDecoration: 'underline' }}
               >
                 публичной оферты
               </a>
@@ -190,15 +318,16 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
         </div>
 
         <div className="submit-line">
-          <button className="pay-btn" type="submit">
+          <button className="pay-btn" type="submit" disabled={isLoading}>
             {isLoading ? "Создаём..." : "ОПЛАТИТЬ"}
           </button>
           <div className={`price-tag ${isPreorder ? "discounted" : ""}`}>
-            {isPreorder && <span>2499₽</span>} {Math.round(finalPrice)}₽
+            {isPreorder && <span>₽{(2499 * quantity).toFixed(0)}</span>}
+            <span>₽{Math.round(totalAmount)}</span>
           </div>
         </div>
+
         {submitError && <div className="order-error">{submitError}</div>}
-        {submitSuccess && <div className="order-success">{submitSuccess}</div>}
       </form>
     </FormProvider>
   );

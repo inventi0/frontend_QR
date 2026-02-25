@@ -1,6 +1,7 @@
 .creator-card {
   background: #1c1c24;
-  border-radius: 16px;
+  border-radius: var(--radius-xxl);
+  /* 24px (was 16px) */
   padding: 1rem;
   transition: border 0.3s;
   border: 2px solid transparent;
@@ -13,7 +14,8 @@
   .creator-image {
     max-width: 367px;
     height: 330px;
-    border-radius: 12px;
+    border-radius: var(--radius-s);
+    /* 8px (Rule 1: 24-16=8) */
     margin-bottom: 1rem;
 
     @media (max-width: 1024px) {
@@ -41,7 +43,7 @@
       .badge {
         background: #684bff;
         padding: 0.2rem 0.5rem;
-        border-radius: 8px;
+        border-radius: var(--radius-s);
         font-size: 0.75rem;
         color: white;
       }
@@ -58,7 +60,7 @@
       .avatar-small {
         width: 27px;
         height: 27px;
-        border-radius: 50%;
+        border-radius: var(--radius-round);
       }
     }
 

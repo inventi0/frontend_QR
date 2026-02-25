@@ -1,5 +1,6 @@
 .login-container {
-  border-radius: 30px;
+  border-radius: var(--radius-xxxl);
+  /* 32px (was 30px) */
   background: linear-gradient(180deg, #000000, #0a0a0a);
   padding: 20px;
   position: relative;
@@ -39,7 +40,7 @@
 .login-input-wrapper {
   position: relative;
   background: #d9d9d9;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   padding: 12px 16px;
@@ -72,7 +73,7 @@
   padding: 15px;
   font-size: 18px;
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
   font-family: "Bicubik", sans-serif;
   font-weight: 400;

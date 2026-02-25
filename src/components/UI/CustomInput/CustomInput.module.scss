@@ -1,9 +1,10 @@
 .input {
   margin-bottom: 10px;
+
   &__main {
     width: 100%;
     padding: 12px;
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     border: 1px solid white;
     background: transparent;
     font-size: 16px;

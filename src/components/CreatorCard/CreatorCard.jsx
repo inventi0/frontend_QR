@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import "./CreatorCard.scss";
-import avatar from "../../assets/avatar.png";
-import creator from "../../assets/creator.png";
 import { useNavigate } from "react-router-dom";
 import Copy from "../icons/Copy";
 import EyePasswordShow from "../icons/EyePasswordShow";
