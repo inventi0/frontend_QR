@@ -441,11 +441,27 @@ export const ProfilePage = () => {
         <div className="order-drawer">
           <div className="order-drawer__backdrop" onClick={() => setActiveOrder(null)} />
           <div className="order-drawer__panel">
-            <div className="order-drawer__header">
-              <h3>Заказ #{activeOrder.id}</h3>
-              <button className="close-btn" onClick={() => setActiveOrder(null)}>
-                ×
-              </button>
+          <div className="order-drawer__header">
+            <h3>Заказ #{activeOrder.id}</h3>
+            <button className="close-btn" onClick={() => setActiveOrder(null)}>
+              ×
+            </button>
+          </div>
+          <div className="order-drawer__meta">
+            <div>
+              <span className="muted">Статус</span>
+              <strong className={getOrderStatusClass(activeOrder.status)}>
+                {getOrderStatusText(activeOrder.status)}
+              </strong>
+            </div>
+            <div>
+              <span className="muted">Сумма</span>
+              <strong>
+                {activeOrder.items && activeOrder.items.length > 0
+                  ? activeOrder.items.reduce((sum, item) => sum + (item.amount * item.quantity || 0), 0)
+                  : activeOrder.total_amount}
+                ₽
+              </strong>
             </div>
             <div className="order-drawer__meta">
               <div>
@@ -483,11 +499,15 @@ export const ProfilePage = () => {
                       )}
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="muted">Пока без товаров.</div>
-              )}
-            </div>
+                  <div className="order-item__meta">
+                    <span>Кол-во: {item.quantity}</span>
+                    <span>Цена: {(item.amount * item.quantity).toFixed(2)}₽</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="muted">Пока без товаров.</div>
+            )}
           </div>
         </div>
       )}
