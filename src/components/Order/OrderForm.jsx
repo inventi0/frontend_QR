@@ -11,7 +11,7 @@ import { useState } from "react";
 import { formatRub } from "../../utils/money";
 import { FaArrowLeft } from "react-icons/fa";
 
-export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
+export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) => {
   // ← НОВОЕ: Состояние для количества товара
   const [quantity, setQuantity] = useState(1);
   const methods = useForm({
@@ -58,9 +58,9 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
     };
   };
 
-  const finalPrice = isPreorder ? 2499 * 0.8 : 2499;
+  const finalPrice = selected.finalPrice || (isPreorder ? 2499 * 0.8 : 2499);
   
-  // ← НОВОЕ: Рассчитываем итоговую сумму с учётом количества
+  // Рассчитываем итоговую сумму с учётом количества
   const totalAmount = finalPrice * quantity;
 
   const onSubmit = async (data) => {
@@ -323,7 +323,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
             {isLoading ? "Создаём..." : "ОПЛАТИТЬ"}
           </button>
           <div className={`price-tag ${isPreorder ? "discounted" : ""}`}>
-            {isPreorder && <span>₽{(2499 * quantity).toFixed(0)}</span>}
+            {isPreorder && <span>₽{Math.round(selected.basePrice * quantity || 2499 * quantity)}</span>}
             <span>₽{Math.round(totalAmount)}</span>
           </div>
         </div>
