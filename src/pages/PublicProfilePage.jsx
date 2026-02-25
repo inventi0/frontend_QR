@@ -1,5 +1,6 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import defaultAvatar from "../assets/Avatar.png";
 import { useGetPublicProfileQuery } from "../api/authApi";
 import "./PublicProfilePage.scss";
 
@@ -42,7 +43,7 @@ export const PublicProfilePage = () => {
         <div className="profile-hero">
           <div className="profile-avatar-large">
             <img
-              src={profile.avatar_url || "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png"}
+              src={profile.avatar_url || defaultAvatar}
               alt={profile.username}
             />
           </div>

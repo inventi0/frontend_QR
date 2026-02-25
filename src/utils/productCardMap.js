@@ -9,14 +9,22 @@
  *   { title, image, description, height, position, onClickHandler, isComingSoon }
  */
 
-const TYPE_FALLBACK_IMAGES = {
-    "Футболка": "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/tshirt.png",
-    "Шорты": "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shorts.png",
-    "Худи": "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/hoodie.png",
-    "Кепка": "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/caps.png",
+import tshirtImg from "../assets/shirt.png";
+import shortsImg from "../assets/shirt.png"; // Placeholder
+import hoodieImg from "../assets/shirt.png"; // Placeholder
+import capsImg from "../assets/caps.png";
+
+export const mapTypeToImage = (type) => {
+  const typeMap = {
+    "Футболка": tshirtImg,
+    "Шорты": shortsImg,
+    "Худи": hoodieImg,
+    "Кепка": capsImg,
+  };
+  return typeMap[type] || tshirtImg;
 };
 
-const DEFAULT_IMAGE = "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/tshirt.png";
+const DEFAULT_IMAGE = tshirtImg;
 
 /**
  * @param {object} product — backend ProductOut

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./CreatorCard.scss";
 import { useNavigate } from "react-router-dom";
+import creatorImg from "../../assets/creator.png";
+import avatarImg from "../../assets/Avatar.png";
 import Copy from "../icons/Copy";
 import EyePasswordShow from "../icons/EyePasswordShow";
 
@@ -18,7 +20,7 @@ const CreatorPage = () => {
       <img
         className="creator-image"
         src={
-          "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/creator.png"
+          creatorImg
         }
         alt="creator"
       />
@@ -30,7 +32,7 @@ const CreatorPage = () => {
           <img
             className="avatar-small"
             src={
-              "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png"
+              avatarImg
             }
             alt="avatar"
           />

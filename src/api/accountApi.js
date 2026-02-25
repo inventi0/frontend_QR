@@ -148,6 +148,14 @@ export const accountApi = createApi({
         { type: "Templates", id: "LIST" },
       ],
     }),
+    createPayment: builder.mutation({
+      query: ({ order_id, amount }) => ({
+        url: "/payment/create",
+        method: "POST",
+        body: { order_id, amount },
+        headers: { "Content-Type": "application/json" },
+      }),
+    }),
   }),
 });
 
@@ -162,4 +170,5 @@ export const {
   useDeleteTemplateMutation,
   useUpdateTemplateMutation,
   useUpdateTemplateFileMutation,
+  useCreatePaymentMutation,
 } = accountApi;

@@ -57,8 +57,9 @@
 .usage-card {
   background: #1a1a1a;
   border-radius: var(--radius-xl);
-  max-width: 550px;
-  padding: 20px;
+  max-width: 650px;
+  width: 100%;
+  padding: 30px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -86,10 +87,12 @@
 
   img {
     max-width: 100%;
+    width: 100%;
+    min-height: 250px;
     border-radius: var(--radius-m);
     /* 12px (was 10px) */
     object-fit: contain;
-    margin-top: 10px;
+    margin-top: 15px;
   }
 
   @media (max-width: 1280px) {
@@ -105,6 +108,7 @@
   }
 
   @media (max-width: 568px) {
+    padding: 20px;
     &__content {
       h3 {
         font-size: 30px;

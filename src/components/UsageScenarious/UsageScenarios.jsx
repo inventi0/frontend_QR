@@ -1,5 +1,9 @@
 import { UsageCard } from "./UsageCard";
 import "./UsageScenarios.scss";
+import editorImg from "../../assets/editor.png";
+import coupleImg from "../../assets/couple.png";
+import shirtImg from "../../assets/shirt.png";
+import questionImg from "../../assets/question.png";
 
 
 export const UsageScenarios = () => {
@@ -11,30 +15,26 @@ export const UsageScenarios = () => {
       <div className="usage-scenarios__columns">
         <div className="usage-scenarios__column">
           <UsageCard
-            title="В редакторе можно добавлять что угодно"
-            text="В пределах разумного. Поделитесь пользовательской картинкой!"
-            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/editor.png"}
-            alt="Редактор"
+            title="Кастомизируй одежду"
+            text="Создавай уникальные дизайны"
+            image={editorImg}
           />
           <UsageCard
-            title="Выражай свою жизненную позицию через S&S"
-            text="Донесите мысль до окружающих"
-            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/couple.png"}
-            alt="Пара"
+            title="Парные футболки"
+            text="Привяжи один дизайн к двум QR-кодам, чтобы быть на одной волне"
+            image={coupleImg}
           />
         </div>
         <div className="usage-scenarios__column">
           <UsageCard
-            title="Футболка в качестве визитки"
-            text="Разместите информацию о себе и станьте самым запоминающимся"
-            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shirt.png"}
-            alt="Футболка"
+            title="Отличный подарок"
+            text="Просто подари с базовым дизайном, а получатель сам поменяет его на свой вкус"
+            image={shirtImg}
           />
           <UsageCard
-            title="На случай если близкий потерялся"
-            text="Если боитесь, что ваш родственник потеряется — укажите контакты для связи"
-            image={"https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/question.png"}
-            alt="Вопрос"
+            title="Что угодно!"
+            text="Оставь ссылки на соцсети, контакты, любимое видео или спрячь тайное послание"
+            image={questionImg}
           />
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./ProfileHeader.scss";
+import avatarImg from "../../assets/Avatar.png";
 
 import Copy from "../icons/Copy";
 
@@ -16,7 +17,7 @@ const ProfileHeader = () => {
       <div className="profile-info">
         <img
           src={
-            "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png"
+            avatarImg
           }
           alt="avatar"
           className="avatar"

@@ -19,6 +19,7 @@ import { formatRub } from "../utils/money";
 import EyePasswordShow from "../components/icons/EyePasswordShow";
 import { useNavigate } from "react-router-dom";
 import { getOrderStatusText, getOrderStatusClass } from "../utils/orderStatus";
+import defaultAvatar from "../assets/Avatar.png";
 
 const formatDate = (iso) => {
   if (!iso) return "";
@@ -213,8 +214,7 @@ export const ProfilePage = () => {
     );
   }
 
-  const avatar = avatarPreview || me.img_url ||
-    "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/Avatar.png";
+  const avatar = avatarPreview || me.img_url || defaultAvatar;
 
   return (
     <div className="profile-page">
@@ -456,29 +456,13 @@ export const ProfilePage = () => {
             </div>
             <div>
               <span className="muted">Сумма</span>
-              <strong>
-                {activeOrder.items && activeOrder.items.length > 0
-                  ? activeOrder.items.reduce((sum, item) => sum + (item.amount * item.quantity || 0), 0)
-                  : activeOrder.total_amount}
-                ₽
-              </strong>
+              <strong>{formatRub(activeOrder?.total_amount)}</strong>
             </div>
-            <div className="order-drawer__meta">
-              <div>
-                <span className="muted">Статус</span>
-                <strong className={getOrderStatusClass(activeOrder.status)}>
-                  {getOrderStatusText(activeOrder.status)}
-                </strong>
-              </div>
-              <div>
-                <span className="muted">Сумма</span>
-                <strong>{formatRub(activeOrder?.total_amount)}</strong>
-              </div>
-              <div>
-                <span className="muted">Создан</span>
-                <strong>{formatDate(activeOrder.created_at)}</strong>
-              </div>
+            <div>
+              <span className="muted">Создан</span>
+              <strong>{formatDate(activeOrder.created_at)}</strong>
             </div>
+          </div>
             <div className="order-drawer__items">
               <h4>Товары</h4>
               {activeOrder.items && activeOrder.items.length > 0 ? (
@@ -499,17 +483,13 @@ export const ProfilePage = () => {
                       )}
                     </div>
                   </div>
-                  <div className="order-item__meta">
-                    <span>Кол-во: {item.quantity}</span>
-                    <span>Цена: {(item.amount * item.quantity).toFixed(2)}₽</span>
-                  </div>
-                </div>
-              ))
+                ))
             ) : (
               <div className="muted">Пока без товаров.</div>
             )}
           </div>
         </div>
+      </div>
       )}
     </div>
   );

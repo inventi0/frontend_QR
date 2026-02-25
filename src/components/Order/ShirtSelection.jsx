@@ -2,6 +2,8 @@ import { useState } from "react";
 import "./Order.scss";
 import { useGetProductQuery } from "../../api/productApi";
 import { formatRub } from "../../utils/money";
+import whiteImg from "../../assets/white.png";
+import blackImg from "../../assets/black.png";
 
 export const ShirtSelection = ({ onNext, onClose, productId }) => {
   const [selectedColor, setSelectedColor] = useState("white");
@@ -13,15 +15,14 @@ export const ShirtSelection = ({ onNext, onClose, productId }) => {
   const basePrice = product?.price;
   const preorderPrice = basePrice != null ? Math.round(basePrice * 0.8) : null;
 
-  const getShirtImage = () => {
-    return selectedColor === "white"
-      ? "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"
-      : "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png";
-  };
+  const tshirtImage =
+    selectedColor === "white"
+      ? whiteImg
+      : blackImg;
 
   const handleNext = (type) => {
     onNext({
-      tshirtImage: getShirtImage(),
+      tshirtImage: tshirtImage,
       size: selectedSize,
       color: selectedColor === "white" ? "Белая" : "Чёрная",
       type,
@@ -48,8 +49,8 @@ export const ShirtSelection = ({ onNext, onClose, productId }) => {
           onClick={() => setSelectedColor("white")}
         >
           <img
-            src="https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/white.png"
-            alt="Белая футболка"
+            src={whiteImg}
+            alt="white"
           />
         </div>
         <div
@@ -57,8 +58,8 @@ export const ShirtSelection = ({ onNext, onClose, productId }) => {
           onClick={() => setSelectedColor("black")}
         >
           <img
-            src="https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/black.png"
-            alt="Чёрная футболка"
+            src={blackImg}
+            alt="black"
           />
         </div>
       </div>

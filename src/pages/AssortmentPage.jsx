@@ -10,6 +10,9 @@ import { useGetMeQuery } from "../api/authApi";
 import { useGetUserQrQuery } from "../api/accountApi";
 import { useListProductsQuery } from "../api/productApi";
 import { groupProductsByType } from "../utils/productCardMap";
+import shortsImg from "../assets/shirt.png"; // Placeholder
+import hoodieImg from "../assets/shirt.png"; // Placeholder
+import capsImg from "../assets/caps.png";
 
 /**
  * Planned products — teasers for items not yet on backend.
@@ -20,19 +23,19 @@ const PLANNED_PRODUCTS = [
   {
     id: "planned-shorts",
     title: "Шорты",
-    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/shorts.png",
+    image: shortsImg,
     description: "Удобные шорты на каждый день",
   },
   {
     id: "planned-hoodie",
     title: "Худи",
-    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/hoodie.png",
+    image: hoodieImg,
     description: "Худи для комфорта и стиля",
   },
   {
     id: "planned-cap",
     title: "Кепки",
-    image: "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/caps.png",
+    image: capsImg,
     description: "Стильная кепка с принтом",
   },
 ];

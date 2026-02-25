@@ -72,30 +72,6 @@ function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
-      <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/creator" element={<CreatorPage />} />
-          <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
-          <Route path="/reviews" element={<ReviewPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/oferta" element={<OfertaPage />} />
-          <Route path="/legal-info" element={<LegalInfoPage />} />
-        <Route
-            path="/profile" 
-          element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/profile/:userId" 
-            element={<PublicProfilePage />} 
-          />
-        <Route
-          path="/range"
-          element={
-            <AssortmentPage
         {!hideHeaderFooter ? (
           <PageContainer>
             <Header
@@ -111,6 +87,7 @@ function App() {
               <Route path="/reviews" element={<ReviewPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/oferta" element={<OfertaPage />} />
+              <Route path="/legal-info" element={<LegalInfoPage />} />
               <Route
                 path="/profile"
                 element={
@@ -131,7 +108,7 @@ function App() {
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            <Footer />
+            {showFooter && <Footer />}
           </PageContainer>
         ) : (
           <Routes>
@@ -140,11 +117,10 @@ function App() {
               element={<PublicProfilePage />}
             />
             {/* Fallback for other routes if needed, though hideHeaderFooter logic mostly isolates profile/:userId */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
       </Suspense>
-
-      {showFooter && <Footer />}
 
       <Modal active={loginModalActive} setActive={setLoginModalActive}>
         <Login

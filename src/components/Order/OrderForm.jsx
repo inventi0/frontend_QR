@@ -41,6 +41,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   const [createPayment] = useCreatePaymentMutation(); // ← ДЛЯ ПЛАТЕЖА
 
   const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;

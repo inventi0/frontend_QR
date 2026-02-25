@@ -1,5 +1,7 @@
 import React from "react";
 import "./ReviewCard.scss";
+import { FaHeart, FaStar } from "react-icons/fa";
+import defaultAvatar from "../../assets/backProfile.png";
 
 export const ReviewCard = ({
   stars,
@@ -13,8 +15,7 @@ export const ReviewCard = ({
   onEdit,
 }) => {
   const safeAvatar =
-    avatarUrl ||
-    "https://02adab20-6e64-4cd9-8807-03d155655166.selstorage.ru/backProfile.png";
+    avatarUrl || defaultAvatar;
 
   const renderStars = () => {
     const filled = "★".repeat(stars);
