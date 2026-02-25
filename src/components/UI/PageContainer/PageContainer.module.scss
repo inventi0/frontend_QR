@@ -1,0 +1,11 @@
+.pageContainer {
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+
+    @media (min-width: 768px) {
+        padding: 0 24px;
+    }
+}

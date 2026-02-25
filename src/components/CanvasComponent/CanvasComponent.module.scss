@@ -1,15 +1,35 @@
 /* src/components/CanvasComponent.module.css */
-.paintCanvas {
+.canvasWrapper {
   display: block;
-  /* Let CSS handle the display size */
   width: 100%;
   height: 100%;
-  @media (max-width: 1024px) {
-    min-height: 650px;
-  }
-  cursor: crosshair;
-  touch-action: none; /* Prevent default touch actions like scroll/zoom */
+  position: relative;
+  /* Prevent default touch actions like scroll/zoom */
+  touch-action: none;
   user-select: none;
   -webkit-user-drag: none;
-  /* background-color set by container or JS fill */
+}
+
+.paintCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* Let overlay catch events */
+}
+
+.overlayCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  cursor: default;
+  /* Will be dynamically overridden by React style.cursor */
 }

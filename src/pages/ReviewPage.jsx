@@ -16,7 +16,7 @@ export const ReviewPage = () => {
   const [showAll, setShowAll] = useState(false);
   const [modalActive, setModalActive] = useState(false);
   const [formError, setFormError] = useState("");
-  
+
   const session = getSession();
   const isAuthenticated = !!session?.accessToken;
   const currentUserId = session?.userId;
@@ -31,12 +31,12 @@ export const ReviewPage = () => {
   const [createReview, { isLoading: isSubmitting }] =
     useCreateReviewMutation();
   const [updateReview, { isLoading: isUpdating }] = useUpdateReviewMutation();
-  const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
-  
+  const [deleteReview] = useDeleteReviewMutation();
+
   const { data: myReview } = useGetMyReviewQuery(undefined, {
     skip: !isAuthenticated,
   });
-  
+
   const hasExistingReview = !!myReview;
 
   const selectVariant = (text) => {
@@ -72,10 +72,10 @@ export const ReviewPage = () => {
 
     try {
       if (hasExistingReview) {
-        await updateReview({ 
-          reviewId: myReview.id, 
-          stars, 
-          content 
+        await updateReview({
+          reviewId: myReview.id,
+          stars,
+          content
         }).unwrap();
       } else {
         await createReview({ stars, content }).unwrap();
@@ -86,7 +86,7 @@ export const ReviewPage = () => {
     } catch (err) {
       const detail = err?.data?.detail;
       let message = "Не удалось отправить отзыв.";
-      
+
       if (typeof detail === "object" && detail?.msg) {
         message = detail.msg;
       } else if (typeof detail === "string") {
@@ -94,7 +94,7 @@ export const ReviewPage = () => {
       } else if (err?.error) {
         message = err.error;
       }
-      
+
       setFormError(message);
       return false;
     }
@@ -104,7 +104,7 @@ export const ReviewPage = () => {
     try {
       await deleteReview(reviewId).unwrap();
       refetch();
-    } catch (err) {
+    } catch {
       alert("Не удалось удалить отзыв");
     }
   };

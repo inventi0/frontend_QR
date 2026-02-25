@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./ProfileHeader.scss";
-import avatar from "../../assets/avatar.png";
+
 import Copy from "../icons/Copy";
 
 const ProfileHeader = () => {

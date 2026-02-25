@@ -1,6 +1,6 @@
 .about-section {
   padding: 60px 20px;
-  /* background removed to show main background */
+  background: transparent;
   color: white;
 }
 
@@ -21,14 +21,14 @@
   max-width: 800px;
   margin: 0 auto 48px;
   text-align: center;
-  
+
   p {
     font-size: 18px;
     line-height: 1.8;
     margin-bottom: 16px;
     opacity: 0.95;
   }
-  
+
   strong {
     font-weight: 700;
     font-size: 20px;
@@ -44,11 +44,8 @@
 }
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  background: #1a1a1a;
+  border-radius: var(--radius-l);
   padding: 32px 24px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease, max-height 0.3s ease, background 0.3s ease;
@@ -56,35 +53,35 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
   }
-  
+
   &.expanded {
     transform: scale(1.02);
-    
+
     .feature-toggle {
       transform: rotate(180deg);
     }
   }
-  
+
   h3 {
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 12px;
   }
-  
+
   .feature-short {
     font-size: 16px;
     line-height: 1.6;
     color: #ccc;
     transition: all 0.3s ease;
   }
-  
+
   .feature-toggle {
     position: absolute;
     top: 16px;
@@ -94,14 +91,14 @@
     color: white;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: transform 0.3s ease, background 0.3s ease;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.2);
     }
@@ -112,15 +109,15 @@
   .about-section {
     padding: 40px 16px;
   }
-  
+
   .about-title {
     font-size: 32px;
   }
-  
+
   .about-content p {
     font-size: 16px;
   }
-  
+
   .about-features {
     grid-template-columns: 1fr;
     gap: 16px;

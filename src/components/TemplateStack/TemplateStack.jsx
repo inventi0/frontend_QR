@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import "./TemplateStack.scss";
 
@@ -36,11 +37,11 @@ function AnimatedTemplateCard({ template, index, isAnimating, direction, onEdit,
   const { scale, y, blur } = positionStyles[index] ?? positionStyles[2];
   const zIndex = index === 0 && isAnimating ? 10 : 3 - index;
 
-  const exitAnim = index === 0 && isAnimating 
-    ? (direction === 'next' ? exitAnimationNext : exitAnimationPrev) 
+  const exitAnim = index === 0 && isAnimating
+    ? (direction === 'next' ? exitAnimationNext : exitAnimationPrev)
     : undefined;
-  const initialAnim = index === 2 
-    ? (direction === 'next' ? enterAnimationNext : enterAnimationPrev) 
+  const initialAnim = index === 2
+    ? (direction === 'next' ? enterAnimationNext : enterAnimationPrev)
     : undefined;
 
   return (
@@ -90,7 +91,7 @@ function AnimatedTemplateCard({ template, index, isAnimating, direction, onEdit,
               </p>
             )}
           </div>
-          
+
           {index === 0 && (
             <button className="read-btn" onClick={() => onEdit(template.file_url)} title="Открыть">
               Открыть
@@ -137,7 +138,7 @@ export default function TemplateStack({ templates, currentTemplateId, onEdit, on
 
   const handleNext = () => {
     if (isAnimating || cards.length === 0) return;
-    
+
     setDirection('next');
     setIsAnimating(true);
     setTimeout(() => {
@@ -149,7 +150,7 @@ export default function TemplateStack({ templates, currentTemplateId, onEdit, on
 
   const handlePrev = () => {
     if (isAnimating || cards.length === 0) return;
-    
+
     setDirection('prev');
     setIsAnimating(true);
     setTimeout(() => {
@@ -162,10 +163,8 @@ export default function TemplateStack({ templates, currentTemplateId, onEdit, on
 
   // Sync with external templates prop
   useEffect(() => {
-    if (templates.length !== cards.length) {
-      setCards(templates.map((t, i) => ({ ...t, stackId: t.id * 1000 + i })));
-    }
-  }, [templates.length, cards.length]);
+    setCards(templates.map((t, i) => ({ ...t, stackId: t.id * 1000 + i })));
+  }, [templates]);
 
   const visibleCards = cards.slice(0, 3);
 

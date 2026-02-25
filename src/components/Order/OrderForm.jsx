@@ -8,6 +8,8 @@ import {
   useCreatePaymentMutation,   // ← НОВОЕ
 } from "../../api/accountApi";
 import { useState } from "react";
+import { formatRub } from "../../utils/money";
+import { FaArrowLeft } from "react-icons/fa";
 
 export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   // ← НОВОЕ: Состояние для количества товара
@@ -39,15 +41,11 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   const [createPayment] = useCreatePaymentMutation(); // ← ДЛЯ ПЛАТЕЖА
 
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;
   const qrId = selected?.qrId || null;
 
-  // ✅ Загружаем реальную цену продукта из backend
-  const { data: product } = useGetProductQuery(productId);
-  
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -168,21 +166,41 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
-        <button 
-          type="button" 
-          className="close-btn" 
+        <button
+          type="button"
+          className="close-btn"
           onClick={onClose}
           aria-label="Закрыть"
         >
           ×
         </button>
+
+        <button
+          type="button"
+          className="back-btn"
+          onClick={onBack}
+          aria-label="Назад к выбору"
+        >
+          <FaArrowLeft /> Назад
+        </button>
+
         <h2>Оформление заказа</h2>
 
-        <div className="summary">
+        <div className="order-summary">
           <img src={selected.tshirtImage} alt="Выбранная футболка" />
-          <div>
-            <span>Размер: {selected.size}</span>
-            <span>Принт: {selected.print}</span>
+          <div className="order-summary__details">
+            <div className="order-summary__row">
+              <span className="label">Цвет</span>
+              <span className="value">{selected.color || "—"}</span>
+            </div>
+            <div className="order-summary__row">
+              <span className="label">Размер</span>
+              <span className="value">{selected.size}</span>
+            </div>
+            <div className="order-summary__row order-summary__total">
+              <span className="label">Итого</span>
+              <span className="value">{formatRub(selected.finalPrice)}</span>
+            </div>
           </div>
         </div>
 
@@ -280,26 +298,18 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
           />
         </div>
 
-        <div style={{ 
-          margin: '20px 0', 
-          padding: '16px', 
-          backgroundColor: '#f8f9fa', 
-          borderRadius: '8px',
-          fontSize: '14px'
-        }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+        <div className="offer-checkbox">
+          <label>
             <input
               type="checkbox"
               required
-              style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
             />
             <span>
-              Я согласен с условиями{' '}
-              <a 
-                href="/oferta" 
-                target="_blank" 
+              Я согласен с условиями{" "}
+              <a
+                href="/oferta"
+                target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#667eea', textDecoration: 'underline' }}
               >
                 публичной оферты
               </a>
@@ -308,7 +318,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
         </div>
 
         <div className="submit-line">
-          <button className="pay-btn" type="submit">
+          <button className="pay-btn" type="submit" disabled={isLoading}>
             {isLoading ? "Создаём..." : "ОПЛАТИТЬ"}
           </button>
           <div className={`price-tag ${isPreorder ? "discounted" : ""}`}>
@@ -318,7 +328,6 @@ export const OrderForm = ({ selected, isPreorder, onSuccess }) => {
         </div>
 
         {submitError && <div className="order-error">{submitError}</div>}
-        {submitSuccess && <div className="order-success">{submitSuccess}</div>}
       </form>
     </FormProvider>
   );

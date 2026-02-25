@@ -5,15 +5,13 @@ export const ProductCard = ({
   title,
   image,
   description,
-  width,
+
   height,
   position,
   onClickHandler,
   isComingSoon = false,
 }) => {
-  const style = {
-    height: `${height}px`,
-  };
+  const style = height ? { height: `${height}px` } : {};
 
   return (
     <div
@@ -30,7 +28,7 @@ export const ProductCard = ({
         </div>
       </div>
 
-      {isComingSoon && <div className="product-badge">Coming soon</div>}
+      {isComingSoon && <div className="product-badge">Скоро</div>}
     </div>
   );
 };
