@@ -3,7 +3,7 @@
   background-size: cover;
   background-position: center;
   height: 620px;
-  border-radius: 24px;
+  border-radius: var(--radius-xxl);
   padding: 40px;
   display: flex;
   flex-direction: column;
@@ -15,11 +15,19 @@
   font-family: "Bicubik", sans-serif;
 
   @media (max-width: 1024px) {
-    padding: 15px;
+    padding: 16px;
   }
 
   @media (max-width: 800px) {
     height: 400px;
+  }
+
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    height: 350px;
+    padding: 12px;
   }
 }
 
@@ -29,12 +37,17 @@
   font-weight: bold;
   line-height: 1.2;
   text-transform: uppercase;
+
   @media (max-width: 1024px) {
     font-size: 48px;
   }
 
   @media (max-width: 800px) {
     font-size: 36px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 28px;
   }
 }
 
@@ -49,7 +62,7 @@
   border: none;
   padding: 16px 32px;
   font-size: 36px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
   font-family: "Bicubik", sans-serif;
 }

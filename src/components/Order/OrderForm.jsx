@@ -3,10 +3,11 @@ import CustomInput from "../UI/CustomInput/CustomInput";
 import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
 import "./Order.scss";
 import { useCreateOrderMutation, useSetQrTemplateMutation } from "../../api/accountApi";
-import { useGetProductQuery } from "../../api/productApi";
 import { useState } from "react";
+import { formatRub } from "../../utils/money";
+import { FaArrowLeft } from "react-icons/fa";
 
-export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
+export const OrderForm = ({ selected, isPreorder, onSuccess, onBack, onClose }) => {
   const methods = useForm({
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -31,15 +32,11 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const [setQrTemplate] = useSetQrTemplateMutation();
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;
   const qrId = selected?.qrId || null;
 
-  // ✅ Загружаем реальную цену продукта из backend
-  const { data: product } = useGetProductQuery(productId);
-  
   const registerWithClear = (name, rules) => {
     const reg = register(name, rules);
     return {
@@ -51,17 +48,18 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
     };
   };
 
-  // TODO: После реализации задачи 2.1 (комбинации футболок) использовать правильный productId с учетом цвета и размера
-  // Пока используем цену из загруженного продукта или fallback 2499₽
-  const basePrice = product?.price || 2499;
-  const finalPrice = isPreorder ? Math.round(basePrice * 0.8) : basePrice;
-
   const onSubmit = async (data) => {
     setSubmitError("");
-    setSubmitSuccess("");
     try {
-      await createOrder({
+      const result = await createOrder({
         items: [{ product_id: productId, quantity: 1 }],
+        contact_info: data.contact.trim(),
+        country: data.country.trim(),
+        city: data.city.trim(),
+        first_name: data.firstName.trim(),
+        last_name: data.lastName.trim(),
+        delivery_address: data.address.trim(),
+        zip_code: data.postal.trim(),
       }).unwrap();
       if (templateId && qrId) {
         try {
@@ -70,14 +68,13 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
           console.error("Не удалось привязать шаблон к QR", err);
         }
       }
-      setSubmitSuccess("Заказ создан!");
-      onSuccess?.();
+      onSuccess?.(result);
     } catch (err) {
       const detail = err?.data?.detail;
       setSubmitError(
         (typeof detail === "string" && detail) ||
-          err?.error ||
-          "Не удалось создать заказ"
+        err?.error ||
+        "Не удалось создать заказ"
       );
     }
   };
@@ -85,21 +82,41 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
   return (
     <FormProvider {...methods}>
       <form className="modal-panel order-form" onSubmit={handleSubmit(onSubmit)}>
-        <button 
-          type="button" 
-          className="close-btn" 
+        <button
+          type="button"
+          className="close-btn"
           onClick={onClose}
           aria-label="Закрыть"
         >
           ×
         </button>
+
+        <button
+          type="button"
+          className="back-btn"
+          onClick={onBack}
+          aria-label="Назад к выбору"
+        >
+          <FaArrowLeft /> Назад
+        </button>
+
         <h2>Оформление заказа</h2>
 
-        <div className="summary">
+        <div className="order-summary">
           <img src={selected.tshirtImage} alt="Выбранная футболка" />
-          <div>
-            <span>Размер: {selected.size}</span>
-            <span>Принт: {selected.print}</span>
+          <div className="order-summary__details">
+            <div className="order-summary__row">
+              <span className="label">Цвет</span>
+              <span className="value">{selected.color || "—"}</span>
+            </div>
+            <div className="order-summary__row">
+              <span className="label">Размер</span>
+              <span className="value">{selected.size}</span>
+            </div>
+            <div className="order-summary__row order-summary__total">
+              <span className="label">Итого</span>
+              <span className="value">{formatRub(selected.finalPrice)}</span>
+            </div>
           </div>
         </div>
 
@@ -162,26 +179,18 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
           />
         </div>
 
-        <div style={{ 
-          margin: '20px 0', 
-          padding: '16px', 
-          backgroundColor: '#f8f9fa', 
-          borderRadius: '8px',
-          fontSize: '14px'
-        }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+        <div className="offer-checkbox">
+          <label>
             <input
               type="checkbox"
               required
-              style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
             />
             <span>
-              Я согласен с условиями{' '}
-              <a 
-                href="/oferta" 
-                target="_blank" 
+              Я согласен с условиями{" "}
+              <a
+                href="/oferta"
+                target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#667eea', textDecoration: 'underline' }}
               >
                 публичной оферты
               </a>
@@ -190,15 +199,17 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose }) => {
         </div>
 
         <div className="submit-line">
-          <button className="pay-btn" type="submit">
+          <button className="pay-btn" type="submit" disabled={isLoading}>
             {isLoading ? "Создаём..." : "ОПЛАТИТЬ"}
           </button>
           <div className={`price-tag ${isPreorder ? "discounted" : ""}`}>
-            {isPreorder && <span>2499₽</span>} {Math.round(finalPrice)}₽
+            {isPreorder && selected.basePrice != null && (
+              <span>{formatRub(selected.basePrice)}</span>
+            )}
+            {" "}{formatRub(selected.finalPrice)}
           </div>
         </div>
         {submitError && <div className="order-error">{submitError}</div>}
-        {submitSuccess && <div className="order-success">{submitSuccess}</div>}
       </form>
     </FormProvider>
   );

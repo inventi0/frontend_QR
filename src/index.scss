@@ -1,4 +1,5 @@
 @import url("./utils/normalize.scss");
+@import "./styles/_variables.scss";
 
 @font-face {
   font-family: "Bicubik";
@@ -23,4 +24,5 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }

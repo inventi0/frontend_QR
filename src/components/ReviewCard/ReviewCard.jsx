@@ -43,24 +43,36 @@ export const ReviewCard = ({
 
   return (
     <div className={`review-card ${variant}`}>
-      {isOwner && (
-        <div className="review-actions">
-          <button className="edit-review-btn" onClick={onEdit} title="Редактировать отзыв">
-            Редактировать
-          </button>
-          <button className="delete-review-btn" onClick={handleDelete} title="Удалить отзыв">
-            Удалить
-          </button>
+      <div className="review-header">
+        <div className="stars">{renderStars()}</div>
+        {isOwner && (
+          <div className="review-actions">
+            <button className="edit-review-btn" onClick={onEdit} title="Редактировать">
+              Редактировать
+            </button>
+            <button className="delete-review-btn" onClick={handleDelete} title="Удалить">
+              Удалить
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="review-body">
+        <div className="text-well">
+          {text}
         </div>
-      )}
-      <div className="stars">{renderStars()}</div>
-      <div className="text">{text}</div>
-      <div className="user-info">
-        <div
-          className="avatar"
-          style={{ backgroundImage: `url(${safeAvatar})` }}
-        ></div>
-        <span>{user}</span>
+      </div>
+
+      <div className="review-footer">
+        <div className="user-info">
+          <div className="avatar-glass-frame">
+            <div
+              className="avatar"
+              style={{ backgroundImage: `url(${safeAvatar})` }}
+            ></div>
+          </div>
+          <span className="username">{user}</span>
+        </div>
       </div>
     </div>
   );

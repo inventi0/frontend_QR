@@ -21,10 +21,10 @@
 
 .reviews-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
   grid-auto-rows: minmax(220px, auto);
   grid-auto-flow: dense;
-  gap: 30px;
+  gap: 24px;
   justify-items: stretch;
   position: relative;
 
@@ -75,13 +75,11 @@
 .spinner-ring {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 90deg,
-    rgba(138, 91, 246, 0.1),
-    rgba(95, 214, 255, 0.9),
-    rgba(138, 91, 246, 0.1)
-  );
+  border-radius: var(--radius-round);
+  background: conic-gradient(from 90deg,
+      rgba(138, 91, 246, 0.1),
+      rgba(95, 214, 255, 0.9),
+      rgba(138, 91, 246, 0.1));
   animation: spin 1.2s linear infinite;
   filter: drop-shadow(0 0 12px rgba(95, 214, 255, 0.45));
 }
@@ -89,7 +87,7 @@
 .spinner-core {
   position: absolute;
   inset: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: #0f0f11;
   box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.6);
 }
@@ -102,7 +100,7 @@
 
 .reviews-empty {
   margin: 30px auto 0;
-  padding: 18px 22px;
+  padding: 20px 24px;
   max-width: 520px;
   color: #e8e8e8;
   text-align: center;
@@ -113,13 +111,13 @@
 .review-button {
   display: block;
   margin-bottom: 20px;
-  padding: 14px 32px;
+  padding: 16px 32px;
   font-size: 18px;
   font-weight: 500;
   color: white;
   background: #5555ff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   transition: background 0.3s ease;
 
@@ -137,13 +135,13 @@
 .view-all-button {
   display: block;
   margin: 40px auto 0;
-  padding: 14px 32px;
+  padding: 16px 32px;
   font-size: 18px;
   font-weight: 500;
   color: white;
   background: #5555ff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   transition: background 0.3s ease;
 

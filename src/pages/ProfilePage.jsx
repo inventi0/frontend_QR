@@ -1,19 +1,21 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import "./ProfilePage.scss";
-import { 
-  useGetMeQuery, 
+import {
+  useGetMeQuery,
   useUpdateUserMutation,
   useUpdateUserProfileMutation,
-  useSetActiveTemplateMutation 
+  useSetActiveTemplateMutation
 } from "../api/authApi";
 import {
-  useListOrdersQuery,
   useListMyOrdersQuery,
   useListUserTemplatesQuery,
   useDeleteTemplateMutation,
   useGetUserQrQuery,
 } from "../api/accountApi";
 import Copy from "../components/icons/Copy";
+import { FaStar, FaCheck, FaPen, FaTrashAlt } from "react-icons/fa";
+import { formatRub } from "../utils/money";
 import EyePasswordShow from "../components/icons/EyePasswordShow";
 import { useNavigate } from "react-router-dom";
 import { getOrderStatusText, getOrderStatusClass } from "../utils/orderStatus";
@@ -47,13 +49,22 @@ export const ProfilePage = () => {
   const { data: me, isLoading: isMeLoading, isError: isMeError } =
     useGetMeQuery();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-scroll to #orders when navigating from OrderSuccess
+  useEffect(() => {
+    if (location.hash === "#orders") {
+      setTimeout(() => {
+        document.getElementById("orders")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, [location.hash]);
 
   const userId = me?.id;
 
   const {
     data: templates,
-    isLoading: isTemplatesLoading,
-    isError: isTemplatesError,
+    isLoading: isTemplatesLoading
   } = useListUserTemplatesQuery(
     { userId, includeGlobal: true, limit: 50, offset: 0 },
     { skip: !userId }
@@ -77,7 +88,7 @@ export const ProfilePage = () => {
   const [updateUserProfile, { isLoading: isUpdatingProfile }] = useUpdateUserProfileMutation();
   const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteTemplateMutation();
   const [setActiveTemplate, { isLoading: isSettingActive }] = useSetActiveTemplateMutation();
-  
+
   // Получаем QR-код пользователя
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
 
@@ -88,8 +99,8 @@ export const ProfilePage = () => {
     setTimeout(() => setCopyState(false), 700);
   };
 
-  const openEditor = (templateUrl) => {
-    navigate("/creator", { state: { templateUrl } });
+  const openEditor = (tpl) => {
+    navigate("/creator", { state: { template: tpl, templateUrl: tpl?.file_url } });
   };
 
   const handleAvatarClick = () => {
@@ -118,7 +129,7 @@ export const ProfilePage = () => {
 
     try {
       await updateUser(formData).unwrap();
-    } catch (err) {
+    } catch {
       setUploadError("Не удалось загрузить аватар");
       setAvatarPreview(null);
     }
@@ -131,7 +142,7 @@ export const ProfilePage = () => {
 
     try {
       await deleteTemplate(templateId).unwrap();
-    } catch (err) {
+    } catch {
       alert("Не удалось удалить шаблон");
     }
   };
@@ -213,7 +224,7 @@ export const ProfilePage = () => {
             <div className="avatar-wrapper" onClick={handleAvatarClick}>
               <img src={avatar} alt={me.username} className="avatar" />
               <div className="avatar-overlay">
-                <span>Изменить фото</span>
+                <span>Изменить</span>
               </div>
               <input
                 type="file"
@@ -225,7 +236,7 @@ export const ProfilePage = () => {
             </div>
             {uploadError && <div className="error-text">{uploadError}</div>}
             {isUpdatingUser && <div className="muted">Загружаем...</div>}
-            
+
             {/* Имя пользователя с возможностью редактирования */}
             {isEditingUsername ? (
               <div className="username-edit-section">
@@ -267,22 +278,22 @@ export const ProfilePage = () => {
                 </button>
               </div>
             )}
-            
+
             <div className="user-id-section">
               <button className="copy-btn" onClick={() => handleCopy(me.id)}>
                 <Copy />
                 {copyState ? "Скопировано" : `User ID: ${me.id}`}
               </button>
             </div>
-            
+
             {/* QR-код профиля */}
             {qrData?.qr_image_url && (
               <div className="qr-section">
                 <h3>Ваш QR-код</h3>
                 <div className="qr-image-container">
-                  <img 
-                    src={qrData.qr_image_url} 
-                    alt="QR-код профиля" 
+                  <img
+                    src={qrData.qr_image_url}
+                    alt="QR-код профиля"
                     className="qr-image"
                   />
                 </div>
@@ -312,7 +323,7 @@ export const ProfilePage = () => {
                 + Добавить шаблон
               </button>
             </div>
-            
+
             <div className="templates-list">
               {templates && templates.length > 0 ? (
                 templates.map((tpl) => (
@@ -340,16 +351,18 @@ export const ProfilePage = () => {
                           onClick={() => handleSetActiveTemplate(tpl.id)}
                           disabled={isSettingActive || qrData?.current_template_id === tpl.id}
                           title={qrData?.current_template_id === tpl.id ? "Уже активный" : "Сделать активным для QR"}
+                          aria-label={qrData?.current_template_id === tpl.id ? "Шаблон активен" : "Сделать активным"}
                         >
-                          {qrData?.current_template_id === tpl.id ? "★ Активный" : "Сделать активным"}
+                          {qrData?.current_template_id === tpl.id ? <FaCheck /> : <FaStar />}
                         </button>
                         {tpl.file_url && (
                           <button
                             className="apply-btn secondary"
-                            onClick={() => openEditor(tpl.file_url)}
-                            title="Открыть шаблон в редакторе"
+                            onClick={() => openEditor(tpl)}
+                            title="Редактировать шаблон"
+                            aria-label="Редактировать шаблон"
                           >
-                            Редактировать
+                            <FaPen />
                           </button>
                         )}
                         <button
@@ -357,8 +370,9 @@ export const ProfilePage = () => {
                           onClick={() => handleDeleteTemplate(tpl.id)}
                           disabled={isDeletingTemplate}
                           title="Удалить шаблон"
+                          aria-label="Удалить шаблон"
                         >
-                          Удалить
+                          <FaTrashAlt />
                         </button>
                       </div>
                     </div>
@@ -376,7 +390,7 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      <div className="orders-section">
+      <div className="orders-section" id="orders">
         <div className="card-header">
           <h3>Ваши заказы</h3>
           {isOrdersLoading && <span className="muted">Загружаем...</span>}
@@ -402,7 +416,7 @@ export const ProfilePage = () => {
                   <div className="order-info">
                     <div className="order-info__item">
                       <span className="label">Сумма</span>
-                      <span className="value">{order.total_amount}₽</span>
+                      <span className="value">{formatRub(order.total_amount)}</span>
                     </div>
                     <div className="order-info__item">
                       <span className="label">Дата</span>
@@ -427,53 +441,56 @@ export const ProfilePage = () => {
         <div className="order-drawer">
           <div className="order-drawer__backdrop" onClick={() => setActiveOrder(null)} />
           <div className="order-drawer__panel">
-          <div className="order-drawer__header">
-            <h3>Заказ #{activeOrder.id}</h3>
-            <button className="close-btn" onClick={() => setActiveOrder(null)}>
-              ×
-            </button>
-          </div>
-          <div className="order-drawer__meta">
-            <div>
-              <span className="muted">Статус</span>
-              <strong className={getOrderStatusClass(activeOrder.status)}>
-                {getOrderStatusText(activeOrder.status)}
-              </strong>
+            <div className="order-drawer__header">
+              <h3>Заказ #{activeOrder.id}</h3>
+              <button className="close-btn" onClick={() => setActiveOrder(null)}>
+                ×
+              </button>
             </div>
-            <div>
-              <span className="muted">Сумма</span>
-              <strong>{activeOrder.total_amount}₽</strong>
+            <div className="order-drawer__meta">
+              <div>
+                <span className="muted">Статус</span>
+                <strong className={getOrderStatusClass(activeOrder.status)}>
+                  {getOrderStatusText(activeOrder.status)}
+                </strong>
+              </div>
+              <div>
+                <span className="muted">Сумма</span>
+                <strong>{formatRub(activeOrder?.total_amount)}</strong>
+              </div>
+              <div>
+                <span className="muted">Создан</span>
+                <strong>{formatDate(activeOrder.created_at)}</strong>
+              </div>
             </div>
-            <div>
-              <span className="muted">Создан</span>
-              <strong>{formatDate(activeOrder.created_at)}</strong>
-            </div>
-          </div>
-          <div className="order-drawer__items">
-            <h4>Товары</h4>
-            {activeOrder.items && activeOrder.items.length > 0 ? (
-              activeOrder.items.map((item) => (
-                <div key={item.id} className="order-item">
-                  <div>
-                    <strong>{item.product?.type || "Товар"}</strong>
-                    <div className="muted">
-                      Размер: {item.product?.size || "-"}, Цвет:{" "}
-                      {item.product?.color || "-"}
+            <div className="order-drawer__items">
+              <h4>Товары</h4>
+              {activeOrder.items && activeOrder.items.length > 0 ? (
+                activeOrder.items.map((item) => (
+                  <div key={item.id} className="order-item">
+                    <div>
+                      <strong>{item.product?.type || "Товар"}</strong>
+                      <div className="muted">
+                        Размер: {item.product?.size || "-"}, Цвет:{" "}
+                        {item.product?.color || "-"}
+                      </div>
+                    </div>
+                    <div className="order-item__meta">
+                      <span>Цена: {formatRub(item.amount)}</span>
+                      <span>Кол-во: {item.quantity}</span>
+                      {item.quantity > 1 && (
+                        <span>Итого: {formatRub(item.amount * item.quantity)}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="order-item__meta">
-                    <span>Кол-во: {item.quantity}</span>
-                    <span>Цена: {item.amount}₽</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="muted">Пока без товаров.</div>
-            )}
+                ))
+              ) : (
+                <div className="muted">Пока без товаров.</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 };

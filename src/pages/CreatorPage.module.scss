@@ -1,67 +1,160 @@
 .appContainer {
-    display: flex;
-    flex-direction: column;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    transition: background-color 0.3s ease, color 0.3s ease;
-    min-height: 100vh;
-    padding-top: 80px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  padding-top: 60px;
+  /* Reduced from 80px for tighter spacing */
+}
+
+.mainContent {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Center child (editorContainer) */
+  width: 100%;
+  position: relative;
+}
+
+/* NEW: EditorContainer - constrains toolbar, banner, canvas to same width */
+.editorContainer {
+  max-width: 1920px;
+  /* Match previous mainContent constraint */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Equal spacing between toolbar, banner, canvas */
+  position: relative;
+  /* Anchor for absolute toolbar */
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    /* Tighter gap on mobile */
   }
 
-  .mainContent {
-    padding: 20px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 20px;
-    max-width: 1920px;
-    margin: 0 auto;
-    width: 100%;
+  /* Eraser Logic: Defines "paper" color */
+  --canvas-background: #2a2a2e;
+}
+
+:global(body.light-theme) .editorContainer {
+  --canvas-background: #ffffff;
+}
+
+.canvasContainer {
+  display: flex;
+  position: relative;
+  z-index: 5;
+  overflow: hidden;
+  border: 3px solid rgba(95, 214, 255, 0.5);
+  border-radius: var(--radius-m);
+  background-color: var(--canvas-background);
+  height: 600px;
+  max-height: 70vh;
+  box-shadow:
+    0 0 0 1px rgba(95, 214, 255, 0.2),
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(95, 214, 255, 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    border-color: rgba(95, 214, 255, 0.7);
+    box-shadow:
+      0 0 0 1px rgba(95, 214, 255, 0.3),
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      inset 0 0 60px rgba(95, 214, 255, 0.08),
+      0 0 40px rgba(95, 214, 255, 0.15);
   }
 
-  .canvasContainer {
-    display: flex;
-    position: relative;
-    overflow: hidden;
-    border: 3px solid rgba(95, 214, 255, 0.5);
-    border-radius: 12px;
-    background-color: var(--canvas-background);
-    height: 600px;
-    max-height: 70vh;
-    box-shadow: 
-      0 0 0 1px rgba(95, 214, 255, 0.2),
-      0 4px 24px rgba(0, 0, 0, 0.4),
-      inset 0 0 40px rgba(95, 214, 255, 0.05);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-
-    &:hover {
-      border-color: rgba(95, 214, 255, 0.7);
-      box-shadow: 
-        0 0 0 1px rgba(95, 214, 255, 0.3),
-        0 6px 32px rgba(0, 0, 0, 0.5),
-        inset 0 0 60px rgba(95, 214, 255, 0.08),
-        0 0 40px rgba(95, 214, 255, 0.15);
-    }
-
-    @media (max-width: 768px) {
-      height: 400px;
-      max-height: 60vh;
-    }
+  @media (max-width: 768px) {
+    height: 400px;
+    max-height: 60vh;
+    margin-bottom: 80px;
+    /* NEW: reserve space for fixed toolbar dock */
   }
+}
 
-  .readOnlyBanner {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 24px;
-    background: rgba(239, 68, 68, 0.9);
-    color: white;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    backdrop-filter: blur(10px);
+.readOnlyBanner {
+  /* CHANGED: Container-aligned, not canvas-absolute */
+  position: relative;
+  align-self: flex-end;
+  /* Align to right on desktop */
+  margin-bottom: 12px;
+  /* Space before canvas */
+  padding: 8px 16px;
+  background: rgba(20, 20, 20, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xxxl);
+  /* 32px (was 30px) */
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 5;
+  /* FIXED: Below toolbar (was 60) */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+
+  @media (max-width: 768px) {
+    margin-left: 15px;
+    /* Prevent edge-hugging */
+    margin-right: 15px;
+    align-self: stretch;
+    /* Full width with margins */
   }
+}
+
+.loginLink {
+  color: #5fd6ff;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff;
+    text-shadow: 0 0 8px rgba(95, 214, 255, 0.8);
+  }
+}
+
+/* --- Template loading / error banners --- */
+.loadingBanner,
+.errorBanner {
+  padding: 8px 16px;
+  border-radius: var(--radius-m);
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadingBanner {
+  background: rgba(95, 214, 255, 0.1);
+  color: rgba(95, 214, 255, 0.9);
+  border: 1px solid rgba(95, 214, 255, 0.2);
+}
+
+.errorBanner {
+  background: rgba(207, 102, 121, 0.1);
+  color: var(--danger, #cf6679);
+  border: 1px solid rgba(207, 102, 121, 0.2);
+  justify-content: space-between;
+
+  button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+  }
+}

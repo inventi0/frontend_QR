@@ -3,7 +3,7 @@
  * 
  * Настройка окружения для тестирования.
  */
-import { expect, afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -20,10 +20,10 @@ const localStorageMock = {
   clear: vi.fn(),
 };
 
-global.localStorage = localStorageMock;
+globalThis.localStorage = localStorageMock;
 
 // Mock для import.meta.env
-global.import = {
+globalThis.import = {
   meta: {
     env: {
       VITE_API_URL: 'http://localhost:8000',

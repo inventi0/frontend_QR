@@ -29,9 +29,9 @@ export const accountApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map((item) => ({ type: "Templates", id: item.id })),
-              { type: "Templates", id: "LIST" },
-            ]
+            ...result.map((item) => ({ type: "Templates", id: item.id })),
+            { type: "Templates", id: "LIST" },
+          ]
           : [{ type: "Templates", id: "LIST" }],
     }),
     setQrTemplate: builder.mutation({
@@ -55,9 +55,9 @@ export const accountApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map((item) => ({ type: "Orders", id: item.id })),
-              { type: "Orders", id: "LIST" },
-            ]
+            ...result.map((item) => ({ type: "Orders", id: item.id })),
+            { type: "Orders", id: "LIST" },
+          ]
           : [{ type: "Orders", id: "LIST" }],
     }),
     listMyOrders: builder.query({
@@ -68,16 +68,34 @@ export const accountApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map((item) => ({ type: "Orders", id: item.id })),
-              { type: "Orders", id: "LIST" },
-            ]
+            ...result.map((item) => ({ type: "Orders", id: item.id })),
+            { type: "Orders", id: "LIST" },
+          ]
           : [{ type: "Orders", id: "LIST" }],
     }),
     createOrder: builder.mutation({
-      query: ({ items }) => ({
+      query: ({
+        items,
+        contact_info,
+        country,
+        city,
+        first_name,
+        last_name,
+        delivery_address,
+        zip_code,
+      }) => ({
         url: "/orders",
         method: "POST",
-        body: { items },
+        body: {
+          items,
+          contact_info,
+          country,
+          city,
+          first_name,
+          last_name,
+          delivery_address,
+          zip_code,
+        },
         headers: { "Content-Type": "application/json" },
       }),
       invalidatesTags: [{ type: "Orders", id: "LIST" }],
@@ -103,6 +121,33 @@ export const accountApi = createApi({
       }),
       invalidatesTags: [{ type: "Templates", id: "LIST" }],
     }),
+    updateTemplate: builder.mutation({
+      query: ({ templateId, name, description }) => ({
+        url: `/templates/${templateId}`,
+        method: "PATCH",
+        body: { name, description },
+        headers: { "Content-Type": "application/json" },
+      }),
+      invalidatesTags: (_, __, { templateId }) => [
+        { type: "Templates", id: templateId },
+        { type: "Templates", id: "LIST" },
+      ],
+    }),
+    updateTemplateFile: builder.mutation({
+      query: ({ templateId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/templates/${templateId}/file`,
+          method: "PATCH",
+          body: formData,
+        };
+      },
+      invalidatesTags: (_, __, { templateId }) => [
+        { type: "Templates", id: templateId },
+        { type: "Templates", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -115,4 +160,6 @@ export const {
   useCreateOrderMutation,
   useCreateTemplateMutation,
   useDeleteTemplateMutation,
+  useUpdateTemplateMutation,
+  useUpdateTemplateFileMutation,
 } = accountApi;
