@@ -75,13 +75,20 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       // 1) Создание заказа
       // ← ИСПРАВЛЕНО: Теперь отправляем РЕАЛЬНОЕ количество
       // -------------------------------
-      console.log("→ Отправляем createOrder:", {
+      const orderPayload = {
         items: [{ product_id: productId, quantity: quantity }],
-      });
+        contact_info: data.contact,
+        country: data.country,
+        city: data.city,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        delivery_address: data.address,
+        zip_code: data.postal,
+      };
 
-      const order = await createOrder({
-        items: [{ product_id: productId, quantity: quantity }],
-      }).unwrap();
+      console.log("→ Отправляем createOrder:", orderPayload);
+
+      const order = await createOrder(orderPayload).unwrap();
 
       console.log("✓ createOrder успешен! Ответ:", order);
 
