@@ -11,6 +11,7 @@ import {
     FaTimes,
 } from "react-icons/fa";
 import styles from "./LayersPanel.module.scss";
+import PopoverShell from "../UI/PopoverShell/PopoverShell";
 
 function LayersPanel({
     layers,
@@ -27,14 +28,7 @@ function LayersPanel({
     const reversed = [...layers].reverse();
 
     return (
-        <div className={styles.panel}>
-            <div className={styles.header}>
-                <span className={styles.title}>Слои</span>
-                <button className={styles.closeBtn} onClick={onClose} title="Закрыть">
-                    <FaTimes />
-                </button>
-            </div>
-
+        <PopoverShell className={styles.panel} title="Слои" onClose={onClose}>
             <div className={styles.list}>
                 {reversed.map((layer) => {
                     const isActive = layer.id === activeLayerId;
@@ -91,7 +85,7 @@ function LayersPanel({
                     <FaPlus /> Слой
                 </button>
             </div>
-        </div>
+        </PopoverShell>
     );
 }
 

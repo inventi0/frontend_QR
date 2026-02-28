@@ -18,7 +18,8 @@
   --tb-r: 12px;
   --tb-px: 6px;
   --tb-py: 4px;
-  --tb-gap: 6px;
+  --tb-gap: 12px;
+  /* Rigid spacing as requested */
   --tb-btn: 40px;
 
   /* Desktop: Normal Flow */
@@ -27,47 +28,27 @@
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: nowrap;
+  gap: var(--tb-gap);
+  /* Отступы между основными блоками тулбара */
   pointer-events: none;
   /* Let clicks pass through empty space */
   padding: 0;
   z-index: 100;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 
   /* Desktop: Order -1 (Above Canvas) */
   @media (min-width: 769px) {
     order: -1;
   }
 
-  /* Mid-width: Bento reflow */
-  @media (max-width: 1100px) {
+  &.bentoMode {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: var(--tb-gap);
     align-items: stretch;
-  }
-
-  /* Mid-width: Bento reflow */
-  @media (max-width: 1100px) {
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: stretch;
-  }
-
-  @media (max-width: 1100px) {
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: stretch;
-  }
-
-  @media (max-width: 768px) {
-    /* Mobile: Column Layout (Props Top, Icons Bottom) */
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: 0;
-    align-items: stretch;
-    position: relative;
-    /* In flow */
-    width: 100%;
-    pointer-events: auto;
-    /* Ensure interactions */
+    justify-content: center;
+    flex-direction: row;
   }
 }
 
@@ -75,35 +56,6 @@
 .toolsWrapper {
   display: contents;
   /* Desktop: Children participate in main flex */
-
-  @media (max-width: 768px) {
-    /* Mobile: Floating Rounded Card */
-    display: flex;
-    width: auto;
-    /* Let margins dictate width */
-    margin: 0 8px 8px 8px;
-    /* Floating look */
-    justify-content: space-between;
-    align-items: center;
-    overflow-x: auto;
-    background: rgba(20, 20, 25, 0.95);
-    border: 1px solid var(--glass-border);
-    /* Full border */
-    border-radius: var(--radius-l);
-    /* Rounded corners */
-    padding: 8px;
-    padding-bottom: 8px;
-    /* Consistent padding inside card */
-    order: 2;
-    /* Bottom */
-
-    /* Hide Scrollbar */
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
 }
 
 /* --- Glass Segments (Desktop) --- */
@@ -114,11 +66,13 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--tb-r);
   padding: var(--tb-py) var(--tb-px);
+  box-sizing: border-box;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   pointer-events: auto;
   display: flex;
   align-items: center;
   gap: var(--tb-gap);
+  flex-wrap: nowrap;
   transition: all 0.2s ease;
   margin: 0;
   min-height: var(--tb-h);
@@ -126,21 +80,10 @@
   order: 1;
   /* Default order (Left Panel) */
 
-  @media (max-width: 1100px) {
+  /* Bento Mode explicitly stretches the left panel wrapper */
+  :global(.bentoMode) & {
     flex: 1 1 auto;
     min-width: fit-content;
-  }
-
-  @media (max-width: 768px) {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 0;
-    min-height: auto;
-    flex: 0 0 auto;
   }
 }
 
@@ -155,6 +98,10 @@
 .rightGroup {
   order: 3;
   /* Right Panel Order */
+
+  :global(.bentoMode) & {
+    flex: 0 0 auto;
+  }
 }
 
 .centerGroup {
@@ -171,54 +118,28 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--tb-r);
   padding: var(--tb-py) var(--tb-px);
+  box-sizing: border-box;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   min-height: var(--tb-h);
   display: flex;
   align-items: center;
   gap: var(--tb-gap);
+  flex-wrap: nowrap;
+  overflow: visible;
+  scrollbar-width: none;
 
-  @media (max-width: 768px) {
-    /* Mobile: Properties Panel (Floating Popover) */
-    position: absolute;
-    top: auto;
-    /* Reset desktop top */
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 92%;
-    max-width: 400px;
-    margin-bottom: 12px;
-
-    background: rgba(30, 30, 35, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-l);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-
-    padding: 12px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-
-    z-index: 102;
-    /* Above Toolbar */
-
-    /* Toggle Logic */
+  &::-webkit-scrollbar {
     display: none;
+  }
 
-    &.visible {
-      display: flex;
-      animation: popoverSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+  /* Bento Layout expansion alongside .glassPanel */
+  :global(.bentoMode) & {
+    order: 4;
+    flex: 1 1 100%;
+    min-width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+    /* Отступ от верхних блоков в режиме Bento */
   }
 }
 
@@ -281,12 +202,6 @@
   /* Desktop: Side-by-side */
   align-items: center;
   gap: var(--tb-gap);
-
-  @media (max-width: 768px) {
-    flex-direction: row;
-    /* Mobile: Scrollable Horizontal */
-    align-items: center;
-  }
 }
 
 /* --- Buttons --- */
@@ -322,18 +237,17 @@
     opacity: 0.3;
     cursor: not-allowed;
   }
+}
 
-  /* Mobile: Icon + Label Stack */
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 2px;
-    padding: 6px;
-    height: auto;
-    min-width: 50px;
+.fontPickerBlock {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border-radius: var(--radius-s) !important;
+  border: none !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s ease;
 
-    svg {
-      font-size: 1.2rem;
-    }
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.6) !important;
   }
 }
 
@@ -346,10 +260,6 @@
   white-space: nowrap;
   letter-spacing: 0.02em;
   pointer-events: none;
-
-  @media (max-width: 768px) {
-    display: block;
-  }
 }
 
 /* --- Button Specifics --- */
@@ -511,13 +421,9 @@
   flex-direction: row;
   align-items: center;
   gap: var(--tb-gap);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .contextGroup {
@@ -525,6 +431,8 @@
   flex-direction: row;
   align-items: center;
   gap: var(--tb-gap);
+  flex-wrap: nowrap;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -606,12 +514,7 @@
 
 .palettePopover {
   /* Portal handles positioning */
-  background: rgba(30, 30, 35, 0.95);
-  backdrop-filter: blur(12px);
   padding: 12px;
-  border-radius: var(--radius-l);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   margin: 0;
 
@@ -635,4 +538,16 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.popoverSurface {
+  background-color: rgba(10, 10, 14, 0.88) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-m) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
+  color: white !important;
+  z-index: 99999 !important;
+  overflow: hidden;
 }

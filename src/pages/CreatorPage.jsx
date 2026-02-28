@@ -109,13 +109,13 @@ export function CreatorPage() {
       } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
         e.preventDefault();
         handleRedo();
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject && selectedTool === 'image') {
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject && (selectedTool === 'image' || activeObject.type === 'text')) {
         e.preventDefault();
         canvasComponentRef.current?.deleteObject(activeObject.id);
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeObject && selectedTool === 'image') {
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && activeObject && (selectedTool === 'image' || activeObject.type === 'text')) {
         e.preventDefault();
         canvasComponentRef.current?.duplicateObject(activeObject.id);
-      } else if (e.key.startsWith('Arrow') && activeObject && selectedTool === 'image') {
+      } else if (e.key.startsWith('Arrow') && activeObject && (selectedTool === 'image' || activeObject.type === 'text')) {
         e.preventDefault();
         const amount = e.shiftKey ? 10 : 1;
         let dx = 0, dy = 0;
@@ -424,6 +424,7 @@ export function CreatorPage() {
               onDirtyChange={setIsDirty}
               onHistoryChange={handleHistoryChange}
               onActiveObjectChange={(obj) => { setActiveObject(obj); refreshLayers(); }}
+              onToolChange={setSelectedTool}
             />
 
             {isLayersPanelOpen && (
@@ -447,7 +448,12 @@ export function CreatorPage() {
             lineWidth={lineWidth}
             setLineWidth={setLineWidth}
             selectedTool={selectedTool}
-            setSelectedTool={setSelectedTool}
+            setSelectedTool={(tool) => {
+              if (tool !== 'text' && tool !== 'image') {
+                canvasComponentRef.current?.exitTextMode?.();
+              }
+              setSelectedTool(tool);
+            }}
             clearCanvas={handleClearCanvas}
             downloadImage={handleDownloadImage}
             onImportImage={handleImportImage}
@@ -472,6 +478,15 @@ export function CreatorPage() {
             onDeleteObject={() => canvasComponentRef.current?.deleteObject(activeObject?.id)}
             onDuplicateObject={() => canvasComponentRef.current?.duplicateObject(activeObject?.id)}
             onChangeOpacity={(opacity) => canvasComponentRef.current?.changeObjectOpacity(activeObject?.id, opacity)}
+            onUpdateText={(updates) => {
+              if (activeObject) {
+                canvasComponentRef.current?.updateLayer(activeObject.id, updates);
+                const layers = canvasComponentRef.current?.getLayers() || [];
+                const updated = layers.find(l => l.id === activeObject.id);
+                if (updated) setActiveObject(updated);
+              }
+            }}
+            onCommitText={() => canvasComponentRef.current?.commitTextEdit()}
             isLayersPanelOpen={isLayersPanelOpen}
             onToggleLayers={() => setIsLayersPanelOpen(v => !v)}
           />
