@@ -19,7 +19,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
     reValidateMode: "onBlur",
     defaultValues: {
       contact: "",
-      country: "",
+      country: "Россия",
       firstName: "",
       lastName: "",
       address: "",
@@ -28,6 +28,25 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       saveAddress: false,
     },
   });
+
+  const cityOptions = [
+    { value: "Москва", label: "Москва" },
+    { value: "Санкт-Петербург", label: "Санкт-Петербург" },
+    { value: "Новосибирск", label: "Новосибирск" },
+    { value: "Екатеринбург", label: "Екатеринбург" },
+    { value: "Казань", label: "Казань" },
+    { value: "Нижний Новгород", label: "Нижний Новгород" },
+    { value: "Красноярск", label: "Красноярск" },
+    { value: "Челябинск", label: "Челябинск" },
+    { value: "Самара", label: "Самара" },
+    { value: "Уфа", label: "Уфа" },
+    { value: "Ростов-на-Дону", label: "Ростов-на-Дону" },
+    { value: "Омск", label: "Омск" },
+    { value: "Краснодар", label: "Краснодар" },
+    { value: "Воронеж", label: "Воронеж" },
+    { value: "Пермь", label: "Пермь" },
+    { value: "Волгоград", label: "Волгоград" },
+  ];
 
   const {
     register,
@@ -247,8 +266,12 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
         <div className="section">
           <h3>Контакт</h3>
           <CustomInput
-            placeholder="Номер телефона или Email"
+            placeholder="Номер телефона"
             error={errors.contact?.message}
+            maskOptions={{
+              mask: '+{7} (000) 000-00-00',
+              lazy: false,
+            }}
             {...registerWithClear("contact", { required: "Обязательное поле" })}
           />
         </div>
@@ -258,6 +281,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
           <CustomInput
             placeholder="Страна или регион"
             error={errors.country?.message}
+            readOnly={true}
             {...registerWithClear("country", { required: "Обязательное поле" })}
           />
 
@@ -279,13 +303,24 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
           </div>
 
           <CustomInput
-            placeholder="Адрес доставки"
+            placeholder="Адрес доставки (ул. ..., д., кв.)"
             error={errors.address?.message}
+            maskOptions={{
+              mask: 'ул. street, д. house, кв. apartment',
+              lazy: false,
+              blocks: {
+                street: { mask: /^[а-яА-ЯёЁa-zA-Z0-9\s.\-]+$/ },
+                house: { mask: /^[0-9а-яА-Яa-zA-Z]+$/ },
+                apartment: { mask: /^[0-9а-яА-Яa-zA-Z]*$/ }
+              }
+            }}
             {...registerWithClear("address", { required: "Обязательное поле" })}
           />
 
           <div className="inline">
             <CustomInput
+              type="select"
+              options={cityOptions}
               placeholder="Город"
               error={errors.city?.message}
               {...registerWithClear("city", { required: "Обязательное поле" })}

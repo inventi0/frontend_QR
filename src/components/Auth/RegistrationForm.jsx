@@ -10,6 +10,7 @@ export const RegistrationForm = ({ onClose }) => {
     username: "",
     password: "",
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [error, setError] = useState("");
@@ -26,6 +27,9 @@ export const RegistrationForm = ({ onClose }) => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleAvatarChange = (event) => {
@@ -43,9 +47,31 @@ export const RegistrationForm = ({ onClose }) => {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setFieldErrors({});
 
-    if (!formValues.email || !formValues.username || !formValues.password) {
-      setError("Заполните все поля формы.");
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formValues.email) {
+      errors.email = "Email обязателен";
+    } else if (!emailRegex.test(formValues.email)) {
+      errors.email = "Введите корректный email";
+    }
+
+    if (!formValues.username) {
+      errors.username = "Имя пользователя обязательно";
+    } else if (formValues.username.trim().length < 3) {
+      errors.username = "Минимум 3 символа";
+    }
+
+    if (!formValues.password) {
+      errors.password = "Пароль обязателен";
+    } else if (formValues.password.length < 3) {
+      errors.password = "Минимум 3 символа";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -70,12 +96,23 @@ export const RegistrationForm = ({ onClose }) => {
       setAvatarPreview(null);
     } catch (err) {
       const detail = err?.data?.detail;
-      const message = Array.isArray(detail)
-        ? detail[0]?.msg
-        : typeof detail === "string"
-          ? detail
-          : err?.error;
-      setError(message || "Не удалось зарегистрироваться. Попробуйте ещё раз.");
+      let message = "Не удалось зарегистрироваться. Попробуйте ещё раз.";
+
+      if (Array.isArray(detail)) {
+        message = detail[0]?.msg || message;
+      } else if (typeof detail === "string") {
+        if (detail === "REGISTER_USER_ALREADY_EXISTS") {
+          message = "Пользователь с таким email уже существует.";
+        } else if (detail.includes("already exists")) {
+          message = "Пользователь с такими данными уже существует.";
+        } else {
+          message = detail;
+        }
+      } else if (err?.error) {
+        message = err.error;
+      }
+      
+      setError(message);
     }
   };
 
@@ -99,8 +136,10 @@ export const RegistrationForm = ({ onClose }) => {
               placeholder="you@example.com"
               value={formValues.email}
               onChange={handleChange}
+              className={fieldErrors.email ? "input-error" : ""}
               required
             />
+            {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}
           </label>
 
           <label className="auth-field">
@@ -111,9 +150,11 @@ export const RegistrationForm = ({ onClose }) => {
               placeholder="Ваш никнейм"
               value={formValues.username}
               onChange={handleChange}
+              className={fieldErrors.username ? "input-error" : ""}
               required
               minLength={3}
             />
+            {fieldErrors.username && <span className="field-error-text">{fieldErrors.username}</span>}
           </label>
 
           <label className="auth-field">
@@ -124,9 +165,11 @@ export const RegistrationForm = ({ onClose }) => {
               placeholder="Минимум 3 символа"
               value={formValues.password}
               onChange={handleChange}
+              className={fieldErrors.password ? "input-error" : ""}
               required
               minLength={3}
             />
+            {fieldErrors.password && <span className="field-error-text">{fieldErrors.password}</span>}
           </label>
 
           <label className="auth-field auth-file-field">

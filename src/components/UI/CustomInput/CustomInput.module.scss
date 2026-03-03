@@ -1,5 +1,6 @@
 .input {
   margin-bottom: 10px;
+  position: relative; /* For the custom chevron */
 
   &__main {
     width: 100%;
@@ -10,6 +11,34 @@
     font-size: 16px;
     color: white;
     outline: none;
+    transition: border-color 0.2s ease;
+    
+    /* Specific styles for select to match input */
+    &[type="select"],
+    &.is-select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 40px; /* Space for the arrow */
+      cursor: pointer;
+      color: white;
+
+      /* When an option is selected or placeholder is shown */
+      &:invalid,
+      &[value=""] {
+        color: #9ca3af; /* Matches typical placeholder color */
+      }
+
+      option {
+        background: #1a1a1a;
+        color: white;
+        padding: 12px;
+      }
+    }
 
     &__error {
       border-color: red;

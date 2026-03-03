@@ -12,17 +12,42 @@ export const Login = ({ onClose, onSuccess }) => {
     username: "",
     password: "",
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [login, { isLoading }] = useLoginMutation();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setFieldErrors({});
+
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!credentials.username) {
+      errors.username = "Email обязателен";
+    } else if (!emailRegex.test(credentials.username)) {
+      errors.username = "Введите корректный email";
+    }
+
+    if (!credentials.password) {
+      errors.password = "Пароль обязателен";
+    } else if (credentials.password.length < 3) {
+      errors.password = "Минимум 3 символа";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
     try {
       const data = await login(credentials).unwrap();
       
@@ -57,10 +82,20 @@ export const Login = ({ onClose, onSuccess }) => {
       window.location.reload();
     } catch (err) {
       const detail = err?.data?.detail;
-      const message =
-        (typeof detail === "string" && detail) ||
-        err?.error ||
-        "Не удалось войти. Проверьте данные и попробуйте снова.";
+      let message = "Не удалось войти. Проверьте данные и попробуйте снова.";
+      
+      if (typeof detail === "string") {
+        if (detail === "LOGIN_BAD_CREDENTIALS") {
+          message = "Неверный email или пароль.";
+        } else if (detail === "LOGIN_USER_NOT_VERIFIED") {
+          message = "Пользователь не верифицирован.";
+        } else {
+          message = detail;
+        }
+      } else if (err?.error) {
+        message = err.error;
+      }
+      
       setError(message);
     }
   };
@@ -83,8 +118,10 @@ export const Login = ({ onClose, onSuccess }) => {
               placeholder="you@example.com"
               value={credentials.username}
               onChange={handleChange}
+              className={fieldErrors.username ? "input-error" : ""}
               required
             />
+            {fieldErrors.username && <span className="field-error-text">{fieldErrors.username}</span>}
           </label>
 
           <label className="auth-field">
@@ -96,6 +133,7 @@ export const Login = ({ onClose, onSuccess }) => {
                 placeholder="Введите пароль"
                 value={credentials.password}
                 onChange={handleChange}
+                className={fieldErrors.password ? "input-error" : ""}
                 required
                 minLength={3}
               />
@@ -106,6 +144,7 @@ export const Login = ({ onClose, onSuccess }) => {
                 {showPassword ? <EyePasswordHide /> : <EyePasswordShow />}
               </span>
             </div>
+            {fieldErrors.password && <span className="field-error-text">{fieldErrors.password}</span>}
           </label>
 
           {error && <div className="auth-error">{error}</div>}
