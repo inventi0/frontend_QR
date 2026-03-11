@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import styles from "./CanvasComponent.module.scss";
 import { getSession } from "../../utils/session";
+import { loadGoogleFont } from "../../utils/fonts";
 
 function hexToRgba(hex) {
   if (!hex) return [0, 0, 0, 0];
@@ -35,6 +36,27 @@ function hexToRgba(hex) {
 // Generate unique ID
 const uid = () => Math.random().toString(36).substr(2, 9);
 
+const getWrappedLines = (ctx, text, maxWidth) => {
+  const paragraphs = (text || "").split('\n');
+  const lines = [];
+  paragraphs.forEach(p => {
+    const words = p.split(' ');
+    let currentLine = words[0] || '';
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + ' ' + word).width;
+      if (width <= maxWidth) {
+        currentLine += ' ' + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+  });
+  return lines;
+};
+
 const CanvasComponent = forwardRef(
   (
     {
@@ -45,6 +67,7 @@ const CanvasComponent = forwardRef(
       onDirtyChange,
       onHistoryChange,
       onActiveObjectChange, // New callback
+      onToolChange, // New callback for text tool
     },
     ref
   ) => {
@@ -100,6 +123,11 @@ const CanvasComponent = forwardRef(
     // --- React State (Triggers re-renders for UI updates if needed) ---
     const [, forceUpdate] = useState({});
     const triggerUpdate = useCallback(() => forceUpdate({}), []);
+    const [editingTextId, setEditingTextId] = useState(null);
+    const editingTextIdRef = useRef(null);
+    const textAreaRef = useRef(null);
+    const redrawFrameRef = useRef(null);
+
 
     // Let parent know when active layer changes
     const setActiveLayerId = useCallback((id) => {
@@ -161,36 +189,70 @@ const CanvasComponent = forwardRef(
           if (layer.canvas) {
             ctxToRenderTo.drawImage(layer.canvas, 0, 0, logicalWidth, logicalHeight);
           }
-        } else if (layer.type === "image") {
+        } else if (layer.type === "image" || layer.type === "text") {
           ctxToRenderTo.save();
-          // Translate to center of image, rotate, draw, restore
+          // Translate to center of layer, rotate, draw, restore
           ctxToRenderTo.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
-          ctxToRenderTo.rotate(layer.rotation * Math.PI / 180);
+          ctxToRenderTo.rotate((layer.rotation || 0) * Math.PI / 180);
           ctxToRenderTo.globalAlpha = layer.opacity ?? 1;
 
-          if (layer.imgEl) {
-            ctxToRenderTo.drawImage(
-              layer.imgEl,
-              -layer.w / 2,
-              -layer.h / 2,
-              layer.w,
-              layer.h
-            );
-          } else if (layer.loadError) {
-            // Draw placeholder
-            ctxToRenderTo.fillStyle = "rgba(255, 0, 0, 0.1)";
-            ctxToRenderTo.fillRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
-            ctxToRenderTo.strokeStyle = "red";
-            ctxToRenderTo.lineWidth = 2;
-            ctxToRenderTo.setLineDash([5, 5]);
-            ctxToRenderTo.strokeRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
-            ctxToRenderTo.setLineDash([]);
+          if (layer.type === "image") {
+            if (layer.imgEl) {
+              ctxToRenderTo.drawImage(
+                layer.imgEl,
+                -layer.w / 2,
+                -layer.h / 2,
+                layer.w,
+                layer.h
+              );
+            } else if (layer.loadError) {
+              // Draw placeholder
+              ctxToRenderTo.fillStyle = "rgba(255, 0, 0, 0.1)";
+              ctxToRenderTo.fillRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
+              ctxToRenderTo.strokeStyle = "red";
+              ctxToRenderTo.lineWidth = 2;
+              ctxToRenderTo.setLineDash([5, 5]);
+              ctxToRenderTo.strokeRect(-layer.w / 2, -layer.h / 2, layer.w, layer.h);
+              ctxToRenderTo.setLineDash([]);
 
-            ctxToRenderTo.fillStyle = "red";
-            ctxToRenderTo.font = "14px sans-serif";
-            ctxToRenderTo.textAlign = "center";
-            ctxToRenderTo.textBaseline = "middle";
-            ctxToRenderTo.fillText("⚠ Ошибка", 0, 0);
+              ctxToRenderTo.fillStyle = "red";
+              ctxToRenderTo.font = "14px sans-serif";
+              ctxToRenderTo.textAlign = "center";
+              ctxToRenderTo.textBaseline = "middle";
+              ctxToRenderTo.fillText("⚠ Ошибка", 0, 0);
+            }
+          } else if (layer.type === "text") {
+            // Render text layer
+            // Prevent duplicate glyphs if the user is typing via an overlay
+            if (layer.id !== editingTextIdRef.current) {
+              const lh = layer.lineHeight || 1.2;
+              const size = layer.fontSize || 24;
+              ctxToRenderTo.font = `${layer.fontStyle || 'normal'} ${layer.fontWeight || 400} ${size}px "${layer.fontFamily || 'system-ui'}", system-ui, -apple-system, sans-serif`;
+              ctxToRenderTo.fillStyle = layer.color || "#000000";
+              ctxToRenderTo.textAlign = layer.alignH || "left";
+              ctxToRenderTo.textBaseline = "top";
+
+              let lines = [];
+              if (layer.userResizedWidth) {
+                // Manually wrap
+                lines = getWrappedLines(ctxToRenderTo, layer.text, layer.w);
+              } else {
+                lines = (layer.text || "").split('\n');
+              }
+
+              const totalHeight = lines.length * size * lh;
+              let startY = -layer.h / 2;
+              if (layer.alignV === 'middle') startY = -totalHeight / 2;
+              else if (layer.alignV === 'bottom') startY = layer.h / 2 - totalHeight;
+
+              let startX = -layer.w / 2;
+              if (layer.alignH === 'center') startX = 0;
+              else if (layer.alignH === 'right') startX = layer.w / 2;
+
+              lines.forEach((line, i) => {
+                ctxToRenderTo.fillText(line, startX, startY + i * size * lh);
+              });
+            }
           }
 
           ctxToRenderTo.restore();
@@ -199,6 +261,8 @@ const CanvasComponent = forwardRef(
 
       ctxToRenderTo.restore();
     }, [fillCanvasBackground]);
+
+
 
     // Transform Helpers for math
     const rotatePoint = (px, py, cx, cy, angleDeg) => {
@@ -210,6 +274,49 @@ const CanvasComponent = forwardRef(
       return { x: nx, y: ny };
     };
 
+    const recomputeTextMetrics = useCallback((layer) => {
+      if (!layer || layer.type !== "text") return;
+      // We can use any context to measure text. mainCtxRef is already set up.
+      const ctx = document.createElement("canvas").getContext("2d");
+      if (!ctx) return;
+
+      const size = layer.fontSize || 24;
+      const lh = layer.lineHeight || 1.2;
+      ctx.font = `${layer.fontStyle || 'normal'} ${layer.fontWeight || 400} ${size}px "${layer.fontFamily || 'system-ui'}", system-ui, -apple-system, sans-serif`;
+
+      if (!layer.userResizedWidth) {
+        // Auto width
+        const parts = (layer.text || "").split('\n');
+        let maxW = 10;
+        parts.forEach(line => {
+          const met = ctx.measureText(line);
+          if (met.width > maxW) maxW = met.width;
+        });
+
+        // Capped width check against canvas bounds
+        const padding = 40;
+        const logicalWidth = mainCanvasRef.current ? mainCanvasRef.current.width / (window.devicePixelRatio || 1) : 400;
+        const maxAllowed = logicalWidth - padding;
+
+        if (maxW > maxAllowed) {
+          layer.userResizedWidth = true;
+          layer.w = maxAllowed;
+          const lines = getWrappedLines(ctx, layer.text, layer.w);
+          layer.h = Math.max(size * lh, lines.length * size * lh);
+        } else {
+          // Provide slight padding so cursor stays visible in textarea
+          layer.w = maxW + 4;
+          layer.h = Math.max(size * lh, parts.length * size * lh);
+        }
+      } else {
+        // Enforce word wrap to layer.w
+        const MathW = Math.max(24, layer.w);
+        const lines = getWrappedLines(ctx, layer.text, MathW);
+        layer.h = Math.max(size * lh, lines.length * size * lh);
+        layer.w = MathW;
+      }
+    }, []);
+
     // Render Overlay (Handles, bounding box, cursors)
     const renderOverlay = useCallback(() => {
       const canvas = overlayCanvasRef.current;
@@ -219,11 +326,10 @@ const CanvasComponent = forwardRef(
       if (!canvas || !ctx || !baseCanvas || !wrapperEl) return;
 
       const dpr = window.devicePixelRatio || 1;
-      const logicalWidth = canvas.width / dpr;
-      const logicalHeight = canvas.height / dpr;
 
-      ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
       // Determine precise size for the cursor based on the CSS coordinate ratio
       const rect = wrapperEl.getBoundingClientRect();
       const scaleX = rect.width > 0 ? baseCanvas.width / rect.width : dpr;
@@ -249,13 +355,13 @@ const CanvasComponent = forwardRef(
       }
 
       // 2. Draw Selection Box & Handles
-      if (selectedTool === "image" && activeLayerIdRef.current) {
+      if ((selectedTool === "image" || selectedTool === "text") && activeLayerIdRef.current) {
         const layer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
-        if (layer && layer.type === "image") {
+        if (layer && (layer.type === "image" || layer.type === "text")) {
           ctx.save();
           // Transform to image local space for easy drawing
           ctx.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
-          ctx.rotate(layer.rotation * Math.PI / 180);
+          ctx.rotate((layer.rotation || 0) * Math.PI / 180);
 
           // Bounding Box
           ctx.strokeStyle = "#5fd6ff";
@@ -276,14 +382,21 @@ const CanvasComponent = forwardRef(
           // 8 Corner/Edge Handles
           const hw = layer.w / 2;
           const hh = layer.h / 2;
-          drawHandle(-hw, -hh); // NW
-          drawHandle(0, -hh);   // N
-          drawHandle(hw, -hh);  // NE
-          drawHandle(hw, 0);    // E
-          drawHandle(hw, hh);   // SE
-          drawHandle(0, hh);    // S
-          drawHandle(-hw, hh);  // SW
-          drawHandle(-hw, 0);   // W
+
+          if (layer.type === "text") {
+            // Text only gets E/W handles for width wrapping
+            drawHandle(hw, 0);    // E
+            drawHandle(-hw, 0);   // W
+          } else {
+            drawHandle(-hw, -hh); // NW
+            drawHandle(0, -hh);   // N
+            drawHandle(hw, -hh);  // NE
+            drawHandle(hw, 0);    // E
+            drawHandle(hw, hh);   // SE
+            drawHandle(0, hh);    // S
+            drawHandle(-hw, hh);  // SW
+            drawHandle(-hw, 0);   // W
+          }
 
           // Rotation Handle
           ctx.beginPath();
@@ -307,7 +420,7 @@ const CanvasComponent = forwardRef(
             ctx.fillStyle = "white";
             ctx.font = "12px sans-serif";
             ctx.textAlign = "center";
-            let displayRot = Math.round(layer.rotation % 360);
+            let displayRot = Math.round((layer.rotation || 0) % 360);
             if (displayRot < 0) displayRot += 360;
             ctx.fillText(`${displayRot}°`, 20, -hh - 25);
           }
@@ -327,7 +440,7 @@ const CanvasComponent = forwardRef(
             const pt = rotatePoint(
               layer.x + layer.w / 2, layer.y - 20,
               layer.x + layer.w / 2, layer.y + layer.h / 2,
-              layer.rotation
+              (layer.rotation || 0)
             );
 
             ctx.fillStyle = "rgba(0,0,0,0.8)";
@@ -344,6 +457,30 @@ const CanvasComponent = forwardRef(
         }
       }
     }, [selectedTool, selectedColor, lineWidth]);
+
+    // Request Animation Frame Scheduler for standard repaint operations
+    const scheduleRedraw = useCallback(() => {
+      if (redrawFrameRef.current) return;
+      redrawFrameRef.current = requestAnimationFrame(() => {
+        redrawFrameRef.current = null;
+        renderScene();
+        renderOverlay();
+      });
+    }, [renderScene, renderOverlay]);
+
+    useEffect(() => {
+      editingTextIdRef.current = editingTextId;
+      if (editingTextId) {
+        setTimeout(() => {
+          if (textAreaRef.current) {
+            textAreaRef.current.focus();
+            const len = textAreaRef.current.value.length;
+            textAreaRef.current.setSelectionRange(len, len); // Move cursor to end
+          }
+        }, 10);
+      }
+      scheduleRedraw(); // Sync both canvas and overlay right after state update
+    }, [editingTextId, scheduleRedraw]);
 
     // Use hit-testing to update cursor based on mouse position
     const updateCursor = useCallback((pos) => {
@@ -376,14 +513,14 @@ const CanvasComponent = forwardRef(
         return;
       }
 
-      if (selectedTool === "image") {
+      if (selectedTool === "image" || selectedTool === "text") {
         if (!activeLayerIdRef.current || transformActionRef.current) {
           if (!transformActionRef.current) setCursor("default");
           return;
         }
 
         const layer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
-        if (!layer || layer.type !== "image") {
+        if (!layer || (layer.type !== "image" && layer.type !== "text")) {
           setCursor("default");
           return;
         }
@@ -612,9 +749,9 @@ const CanvasComponent = forwardRef(
       // Search top to bottom
       for (let i = layersRef.current.length - 1; i >= 0; i--) {
         const l = layersRef.current[i];
-        if (l.type === "image" && l.visible) {
+        if ((l.type === "image" || l.type === "text") && l.visible) {
           // Local hit test matching standard rotation
-          const local = rotatePoint(pos.cssX, pos.cssY, l.x + l.w / 2, l.y + l.h / 2, -l.rotation);
+          const local = rotatePoint(pos.cssX, pos.cssY, l.x + l.w / 2, l.y + l.h / 2, -(l.rotation || 0));
           if (local.x >= l.x && local.x <= l.x + l.w && local.y >= l.y && local.y <= l.y + l.h) {
             return l;
           }
@@ -625,7 +762,7 @@ const CanvasComponent = forwardRef(
 
     const getTransformAction = (pos, layer) => {
       const hs = 12; // Handle hit size (slightly larger for touch)
-      const local = rotatePoint(pos.cssX, pos.cssY, layer.x + layer.w / 2, layer.y + layer.h / 2, -layer.rotation);
+      const local = rotatePoint(pos.cssX, pos.cssY, layer.x + layer.w / 2, layer.y + layer.h / 2, -(layer.rotation || 0));
 
       // Coordinates in local space relative to center
       const lx = local.x - (layer.x + layer.w / 2);
@@ -634,6 +771,14 @@ const CanvasComponent = forwardRef(
       const hh = layer.h / 2;
 
       const inBox = (px, py, bx, by) => Math.abs(px - bx) <= hs / 2 && Math.abs(py - by) <= hs / 2;
+
+      if (layer.type === "text") {
+        if (inBox(lx, ly, 0, -hh - 25)) return "rotate";
+        if (inBox(lx, ly, hw, 0)) return "resize-e";
+        if (inBox(lx, ly, -hw, 0)) return "resize-w";
+        if (lx >= -hw && lx <= hw && ly >= -hh && ly <= hh) return "move";
+        return null;
+      }
 
       if (inBox(lx, ly, 0, -hh - 25)) return "rotate";
       if (inBox(lx, ly, -hw, -hh)) return "resize-nw";
@@ -704,9 +849,10 @@ const CanvasComponent = forwardRef(
         }
       }
 
-      if (selectedTool === "image") {
+      if (selectedTool === "image" || selectedTool === "text") {
         // Check handles of active layer first
         let action = null;
+        let hitLayer = null;
         let activeLayer = layersRef.current.find(l => l.id === activeLayerIdRef.current);
 
         if (activeLayer) {
@@ -719,7 +865,7 @@ const CanvasComponent = forwardRef(
           const startW = activeLayer.w;
           const startH = activeLayer.h;
           const startC = { x: activeLayer.x + startW / 2, y: activeLayer.y + startH / 2 };
-          const startR = activeLayer.rotation;
+          const startR = activeLayer.rotation || 0;
 
           // Anchor point is the OPPOSITE side handle in local space
           let anchorLocal = { x: 0, y: 0 };
@@ -742,7 +888,7 @@ const CanvasComponent = forwardRef(
           };
         } else {
           // Hit test for selection
-          const hitLayer = getHitLayer(pos);
+          hitLayer = getHitLayer(pos);
           if (hitLayer) {
             setActiveLayerId(hitLayer.id);
             transformActionRef.current = "move";
@@ -753,10 +899,48 @@ const CanvasComponent = forwardRef(
             };
           } else {
             setActiveLayerId(null);
+
+            // ONE-SHOT TEXT PLACEMENT:
+            if (selectedTool === "text") {
+              const textId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+              const newTextLayer = {
+                id: textId,
+                type: "text",
+                name: "Текст",
+                x: pos.cssX - 50,
+                y: pos.cssY - 15,
+                w: 100,
+                h: 30,
+                rotation: 0,
+                opacity: 1,
+                visible: true,
+                text: "",
+                fontSize: 24,
+                fontFamily: "Inter",
+                fontWeight: 600,
+                color: selectedColor || "#000000",
+                alignH: "left",
+                alignV: "top",
+                lineHeight: 1.2,
+                userResizedWidth: false
+              };
+              layersRef.current.push(newTextLayer);
+              setActiveLayerId(textId);
+              setEditingTextId(textId);
+              if (onToolChange) onToolChange("image"); // Switch back to 'select' to disarm placement natively
+              renderScene();
+            } else {
+              // Not armed -> Commit any active edit or just deselect natively.
+              if (editingTextId) setEditingTextId(null);
+            }
           }
         }
         renderOverlay();
-        return;
+        // Return only if we hit something, or if we are in 'image' mode.
+        // If we are in 'text' mode and hit nothing, we should fall through to Phase 2 text placement. 
+        if (selectedTool === "image" || hitLayer || action) {
+          return;
+        }
       }
 
       // --- Drawing Tools ---
@@ -805,7 +989,7 @@ const CanvasComponent = forwardRef(
         }
       }
 
-      if (selectedTool === "image" && activeLayerIdRef.current && transformActionRef.current) {
+      if ((selectedTool === "image" || selectedTool === "text") && activeLayerIdRef.current && transformActionRef.current) {
         e.preventDefault(); // Prevent scrolling while transforming
         const action = transformActionRef.current;
         const start = transformStartRef.current;
@@ -827,7 +1011,7 @@ const CanvasComponent = forwardRef(
           const angleNow = Math.atan2(pos.cssY - cy, pos.cssX - cx);
           let angleDelta = (angleNow - angleStart) * 180 / Math.PI;
 
-          let newRot = layerStr.rotation + angleDelta;
+          let newRot = (layerStr.rotation || 0) + angleDelta;
           if (e.shiftKey) { // Snap to 15 degrees
             newRot = Math.round(newRot / 15) * 15;
           }
@@ -919,10 +1103,14 @@ const CanvasComponent = forwardRef(
           layer.h = newH;
           layer.x = newCenterCanvas.x - newW / 2;
           layer.y = newCenterCanvas.y - newH / 2;
+
+          if (layer.type === "text") {
+            layer.userResizedWidth = true;
+            recomputeTextMetrics(layer);
+          }
         }
 
-        renderScene();
-        renderOverlay();
+        scheduleRedraw();
         return;
       }
 
@@ -1494,6 +1682,15 @@ const CanvasComponent = forwardRef(
           }
           return { type: 'paint', id: l.id, name: l.name, visible: l.visible, bitmap };
         }
+        if (l.type === 'text') {
+          return {
+            type: 'text', id: l.id, name: l.name, visible: l.visible,
+            x: l.x, y: l.y, w: l.w, h: l.h, rotation: l.rotation, opacity: l.opacity,
+            text: l.text, fontSize: l.fontSize, fontFamily: l.fontFamily,
+            fontWeight: l.fontWeight, fontStyle: l.fontStyle, color: l.color,
+            alignH: l.alignH, alignV: l.alignV, lineHeight: l.lineHeight, userResizedWidth: l.userResizedWidth
+          };
+        }
         // Image layer — serialize transforms + original src
         return {
           type: 'image', id: l.id, name: l.name, visible: l.visible,
@@ -1547,6 +1744,15 @@ const CanvasComponent = forwardRef(
             });
             imageLoadPromises.push(p);
           }
+        } else if (ld.type === 'text') {
+          const layer = {
+            id: ld.id, type: 'text', name: ld.name || 'Текст', visible: ld.visible !== false,
+            x: ld.x || 0, y: ld.y || 0, w: ld.w || 100, h: ld.h || 30, rotation: ld.rotation || 0, opacity: ld.opacity ?? 1,
+            text: ld.text || "", fontSize: ld.fontSize || 24, fontFamily: ld.fontFamily || "Inter",
+            fontWeight: ld.fontWeight || 600, fontStyle: ld.fontStyle || "normal", color: ld.color || "#000000",
+            alignH: ld.alignH || "left", alignV: ld.alignV || "top", lineHeight: ld.lineHeight || 1.2, userResizedWidth: !!ld.userResizedWidth
+          };
+          layersRef.current.push(layer);
         } else if (ld.type === 'image') {
           // Create image layer shell, load image async
           const layer = {
@@ -1623,12 +1829,20 @@ const CanvasComponent = forwardRef(
         initPaintLayer();
       }
 
+      layersRef.current.forEach(l => {
+        if (l.type === 'text' && l.fontFamily) {
+          loadGoogleFont(l.fontFamily).then(() => {
+            recomputeTextMetrics(l);
+            scheduleRedraw();
+          }).catch(() => { });
+        }
+      });
+
       syncActivePaintRefs();
-      renderScene();
-      renderOverlay();
+      scheduleRedraw();
       saveSnapshot();
       triggerUpdate();
-    }, [initPaintLayer, renderScene, renderOverlay, saveSnapshot, triggerUpdate]);
+    }, [initPaintLayer, renderScene, renderOverlay, scheduleRedraw, saveSnapshot, triggerUpdate]);
 
     useImperativeHandle(ref, () => ({
       clearCanvas,
@@ -1655,12 +1869,46 @@ const CanvasComponent = forwardRef(
       toggleLayerVisibility,
       selectLayer: (id) => setActiveLayerId(id),
       getLayers: () => layersRef.current.map(l => {
-        const clone = { id: l.id, type: l.type, name: l.name || (l.type === 'paint' ? 'Слой' : 'Изображение'), visible: l.visible };
-        if (l.type === 'image') { clone.src = l.src; }
+        const clone = { ...l, name: l.name || (l.type === 'paint' ? 'Слой' : l.type === 'text' ? 'Текст' : 'Изображение') };
         return clone;
       }),
       getActivePaintLayerId: () => activePaintLayerIdRef.current,
       getActiveLayerId: () => activeLayerIdRef.current,
+      // Metadata/Property API
+      updateLayer: (id, updates) => {
+        const layer = layersRef.current.find(l => l.id === id);
+        if (layer) {
+          Object.assign(layer, updates);
+
+          if (updates.fontFamily) {
+            // Immediate sync application before network resolves
+            if (layer.type === 'text') recomputeTextMetrics(layer);
+            scheduleRedraw();
+            triggerUpdate();
+
+            loadGoogleFont(updates.fontFamily).then(() => {
+              // Delayed re-application once kerning metrics land
+              if (layer.type === 'text') recomputeTextMetrics(layer);
+              scheduleRedraw();
+              triggerUpdate();
+            }).catch(() => { });
+          } else {
+            if (layer.type === 'text') recomputeTextMetrics(layer);
+            scheduleRedraw();
+            triggerUpdate();
+          }
+
+          saveSnapshot();
+        }
+      },
+      exitTextMode: () => {
+        setEditingTextId(null);
+        setActiveLayerId(null);
+        scheduleRedraw();
+      },
+      commitTextEdit: () => {
+        setEditingTextId(null);
+      },
       // Scene persistence
       exportScene,
       importScene,
@@ -1668,7 +1916,7 @@ const CanvasComponent = forwardRef(
       clearCanvas, downloadImage, toBlob, loadFromFile, loadFromUrl, addImageLayer,
       undo, redo, deleteObject, duplicateObject, reorderObject, applyObjectHelper, changeObjectOpacity, nudgeObject,
       addPaintLayer, deleteLayer, moveLayer, toggleLayerVisibility, setActiveLayerId,
-      exportScene, importScene
+      exportScene, importScene, recomputeTextMetrics, scheduleRedraw, saveSnapshot, triggerUpdate
     ]);
 
     return (
@@ -1690,7 +1938,91 @@ const CanvasComponent = forwardRef(
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
           onPointerCancel={onPointerUp}
+          onDoubleClick={(e) => {
+            if (!canEdit) return;
+            const pos = getCanvasPoint(e);
+            if (!pos) return;
+            const hitLayer = getHitLayer(pos);
+            if (hitLayer && hitLayer.type === "text") {
+              setActiveLayerId(hitLayer.id);
+              setEditingTextId(hitLayer.id);
+              if (onToolChange) onToolChange("image");
+              renderOverlay();
+            }
+          }}
+          onKeyDown={(e) => {
+            if (selectedTool === 'text' && e.key === 'Escape') {
+              e.preventDefault();
+              if (onToolChange) onToolChange('image');
+            }
+          }}
+          tabIndex={selectedTool === 'text' ? 0 : undefined}
         />
+
+        {editingTextId && (() => {
+          const layer = layersRef.current.find(l => l.id === editingTextId);
+          if (!layer) return null;
+
+          const left = layer.x;
+          const top = layer.y;
+
+          return (
+            <textarea
+              ref={textAreaRef}
+              style={{
+                position: 'absolute',
+                left: `${left}px`,
+                top: `${top}px`,
+                width: `${layer.w}px`,
+                height: `${layer.h}px`,
+                transform: `rotate(${layer.rotation || 0}deg)`,
+                transformOrigin: '50% 50%',
+                background: 'transparent',
+                border: '1px solid #5fd6ff',
+                outline: 'none',
+                resize: 'none',
+                padding: 0,
+                margin: 0,
+                overflow: 'hidden',
+                fontSize: `${layer.fontSize}px`,
+                fontFamily: `"${layer.fontFamily || 'system-ui'}", system-ui, -apple-system, sans-serif`,
+                fontWeight: layer.fontWeight,
+                fontStyle: layer.fontStyle,
+                color: layer.color,
+                textAlign: layer.alignH,
+                lineHeight: layer.lineHeight,
+                opacity: layer.opacity,
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                zIndex: 1000
+              }}
+              value={layer.text || ""}
+              onChange={(e) => {
+                layer.text = e.target.value;
+                recomputeTextMetrics(layer);
+                scheduleRedraw();
+                triggerUpdate();
+              }}
+              onBlur={() => {
+                if (!layer.text.trim()) {
+                  // Delete if empty
+                  layersRef.current = layersRef.current.filter(l => l.id !== layer.id);
+                  setActiveLayerId(null);
+                }
+                setEditingTextId(null);
+                scheduleRedraw();
+                saveSnapshot();
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation(); // prevent window hotkeys
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  e.target.blur();
+                }
+              }}
+            />
+          );
+        })()}
       </div>
     );
   }
