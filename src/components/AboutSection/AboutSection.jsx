@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import "./AboutSection.scss";
 
 export const AboutSection = () => {
-  const [expandedCard, setExpandedCard] = useState(null);
+  const [expandedCard, setExpandedCard] = useState(0);
 
   const toggleCard = (index) => {
-    setExpandedCard(expandedCard === index ? null : index);
+    setExpandedCard(index);
   };
 
   const features = [
