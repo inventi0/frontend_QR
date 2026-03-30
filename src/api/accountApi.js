@@ -83,6 +83,7 @@ export const accountApi = createApi({
         last_name,
         delivery_address,
         zip_code,
+        use_yandex_delivery,
       }) => ({
         url: "/orders",
         method: "POST",
@@ -95,10 +96,18 @@ export const accountApi = createApi({
           last_name,
           delivery_address,
           zip_code,
+          use_yandex_delivery,
         },
         headers: { "Content-Type": "application/json" },
       }),
       invalidatesTags: [{ type: "Orders", id: "LIST" }],
+    }),
+    syncOrderDeliveryStatus: builder.mutation({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/delivery-status`,
+        method: "GET",
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: "Orders", id: arg }, { type: "Orders", id: "LIST" }],
     }),
     createTemplate: builder.mutation({
       query: ({ file, name, description }) => {
@@ -171,4 +180,5 @@ export const {
   useUpdateTemplateMutation,
   useUpdateTemplateFileMutation,
   useCreatePaymentMutation,
+  useSyncOrderDeliveryStatusMutation,
 } = accountApi;

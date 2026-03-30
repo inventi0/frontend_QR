@@ -26,6 +26,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       city: "",
       postal: "",
       saveAddress: false,
+      useYandexDelivery: false,
     },
   });
 
@@ -86,14 +87,8 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
     setSubmitError("");
     setSubmitSuccess("");
 
-    console.log("=== НАЧИНАЕМ ОФОРМЛЕНИЕ ===");
-    console.log("Введённые данные формы:", data);
-
     try {
-      // -------------------------------
       // 1) Создание заказа
-      // ← ИСПРАВЛЕНО: Теперь отправляем РЕАЛЬНОЕ количество
-      // -------------------------------
       const orderPayload = {
         items: [{ product_id: productId, quantity: quantity }],
         contact_info: data.contact,
@@ -103,89 +98,30 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
         last_name: data.lastName,
         delivery_address: data.address,
         zip_code: data.postal,
+        use_yandex_delivery: true,
       };
-
-      console.log("→ Отправляем createOrder:", orderPayload);
 
       const order = await createOrder(orderPayload).unwrap();
 
-      console.log("✓ createOrder успешен! Ответ:", order);
-
-      const orderId = order.id;
-
-      // -------------------------------
-      // 2) Привязка QR-шаблона
-      // -------------------------------
+      // 2) Привязка QR-шаблона (если есть)
       if (templateId && qrId) {
-        console.log("→ Привязываем шаблон QR:", templateId);
         try {
           await setQrTemplate({ template_id: templateId }).unwrap();
-          console.log("✓ QR шаблон успешно привязан");
         } catch (err) {
-          console.error("X Ошибка привязки QR:", err);
+          console.error("Ошибка привязки QR:", err);
         }
-      } else {
-        console.log("Шаблон QR не требуется");
       }
 
-      // -------------------------------
-      // 3) Создаём платёж через RTK Query
-      // ← ИСПРАВЛЕНО: Отправляем сумму с учётом количества
-      // -------------------------------
-      console.log("→ Создаём платёж через RTK Query:", {
-        order_id: orderId,
-        amount: totalAmount,
-      });
-
-      let accessToken = null;
-      try {
-        const raw = localStorage.getItem("session");
-        accessToken = raw ? JSON.parse(raw)?.accessToken : null;
-      } catch {
-        accessToken = null;
-      }
-
-      if (!accessToken) {
-        console.error("❌ Нет accessToken! Пользователь не авторизован");
-        setSubmitError("Вы не авторизованы");
-        return;
-      }
-
-      let payRes;
-      try {
-        payRes = await createPayment({
-          order_id: orderId,
-          amount: totalAmount,
-        }).unwrap();
-
-        console.log("✓ Ответ createPayment:", payRes);
-      } catch (err) {
-        console.error("❌ Ошибка createPayment:", err);
-        setSubmitError("Ошибка при создании платежа");
-        return;
-      }
-
-      if (!payRes?.redirect_url) {
-        console.error("❌ Нет redirect_url");
-        setSubmitError("Ошибка при создании платежа");
-        return;
-      }
-
-      console.log("✓ Редирект на YooKassa:", payRes.redirect_url);
-      window.location.href = payRes.redirect_url;
-
-      setSubmitSuccess("Заказ создан, переход к оплате...");
-      onSuccess?.();
+      // 3) ЗАГЛУШКА ОПЛАТЫ — переходим к успеху без YooKassa
+      setSubmitSuccess("Заказ создан успешно!");
+      onSuccess?.(order);
 
     } catch (err) {
-      console.error("=== ОШИБКА ПРИ ОПЛАТЕ ===");
-      console.error(err);
-
       const detail = err?.data?.detail;
       setSubmitError(
         (typeof detail === "string" && detail) ||
           err?.error ||
-          "Не удалось создать заказ или платёж"
+          "Не удалось создать заказ"
       );
     }
   };
@@ -339,6 +275,10 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             id="saveAddress"
             {...register("saveAddress")}
           />
+
+          <div style={{ marginTop: '10px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
+            * Доставка осуществляется через Яндекс Доставку
+          </div>
         </div>
 
         <div className="offer-checkbox">

@@ -8,10 +8,11 @@ import {
   useSetActiveTemplateMutation
 } from "../api/authApi";
 import {
-  useListMyOrdersQuery,
-  useListUserTemplatesQuery,
   useDeleteTemplateMutation,
   useGetUserQrQuery,
+  useSyncOrderDeliveryStatusMutation,
+  useListUserTemplatesQuery,
+  useListMyOrdersQuery,
 } from "../api/accountApi";
 import Copy from "../components/icons/Copy";
 import { FaStar, FaCheck, FaPen, FaTrashAlt } from "react-icons/fa";
@@ -89,6 +90,7 @@ export const ProfilePage = () => {
   const [updateUserProfile, { isLoading: isUpdatingProfile }] = useUpdateUserProfileMutation();
   const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteTemplateMutation();
   const [setActiveTemplate, { isLoading: isSettingActive }] = useSetActiveTemplateMutation();
+  const [syncDeliveryStatus, { isLoading: isSyncing }] = useSyncOrderDeliveryStatusMutation();
 
   // Получаем QR-код пользователя
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
@@ -484,16 +486,74 @@ export const ProfilePage = () => {
                     </div>
                   </div>
                 ))
-            ) : (
-              <div className="muted">Пока без товаров.</div>
-            )}
+              ) : (
+                <div className="muted">Пока без товаров.</div>
+              )}
+            </div>
+
+          <div className="order-drawer__delivery" style={{ marginTop: '20px', padding: '15px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #eee' }}>
+              <h4 style={{ marginBottom: '12px', color: '#333' }}>Яндекс Доставка</h4>
+              {activeOrder.yandex_request_id ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '14px' }}>Статус: <strong style={{ color: '#2e7d32' }}>{activeOrder.yandex_status || "Создан"}</strong></span>
+                    <button
+                      className="sync-status-btn"
+                      onClick={() => syncDeliveryStatus(activeOrder.id)}
+                      disabled={isSyncing}
+                      style={{ padding: '6px 12px', fontSize: '12px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc', background: '#fff' }}
+                    >
+                      {isSyncing ? "Обновляем..." : "Обновить статус"}
+                    </button>
+                  </div>
+                  {activeOrder.delivery_cost > 0 && (
+                    <div className="delivery-price" style={{ fontSize: '14px', fontWeight: '500' }}>
+                      Стоимость доставки: {formatRub(activeOrder.delivery_cost)}
+                    </div>
+                  )}
+                  <div className="muted" style={{ fontSize: '11px', marginTop: '8px', color: '#888' }}>
+                    ID заявки: {activeOrder.yandex_request_id}
+                  </div>
+                </>
+              ) : (
+                <div className="delivery-error-box" style={{ color: '#d32f2f', fontSize: '13px', background: '#fff1f0', padding: '12px', borderRadius: '6px', border: '1px solid #ffa39e' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '16px' }}>⚠️</span> Ошибка оформления
+                  </div>
+                  <div style={{ marginTop: '8px', fontSize: '12px', lineHeight: '1.5', background: '#fff', padding: '8px', borderRadius: '4px', border: '1px solid #ffccc7' }}>
+                    {activeOrder.yandex_error || "Доставка через Яндекс не была выбрана или не удалось получить офферы."}
+                  </div>
+                  {activeOrder.yandex_error && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(activeOrder.yandex_error);
+                      }}
+                      style={{ 
+                        marginTop: '10px', 
+                        background: '#fff', 
+                        border: '1px solid #d32f2f', 
+                        color: '#d32f2f', 
+                        padding: '4px 10px', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer', 
+                        fontSize: '11px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.background = '#fff1f0'}
+                      onMouseOut={(e) => e.target.style.background = '#fff'}
+                    >
+                      Скопировать текст ошибки для поддержки
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );
 };
 
-// ✅ Default export для lazy loading
 export default ProfilePage;

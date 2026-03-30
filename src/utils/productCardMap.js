@@ -34,7 +34,7 @@ export function mapProductToCard(product) {
     return {
         id: product.id,
         title: product.type || "Товар",
-        image: product.img_url || TYPE_FALLBACK_IMAGES[product.type] || DEFAULT_IMAGE,
+        image: product.img_url || mapTypeToImage(product.type) || DEFAULT_IMAGE,
         description: product.description || `${product.color || ""} · ${product.size || ""}`.trim(),
         // available: products from backend are available by default
         available: true,
