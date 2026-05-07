@@ -5,11 +5,12 @@ import "./Order.scss";
 import {
   useCreateOrderMutation,
   useSetQrTemplateMutation,
-  useCreatePaymentMutation,   // ← НОВОЕ
+  useCreatePaymentMutation,
+  useCalculateDeliveryMutation,
 } from "../../api/accountApi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatRub } from "../../utils/money";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaTruck } from "react-icons/fa";
 
 export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) => {
   // ← НОВОЕ: Состояние для количества товара
@@ -26,7 +27,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       city: "",
       postal: "",
       saveAddress: false,
-      useYandexDelivery: false,
+      useYandexDelivery: true,
     },
   });
 
@@ -62,6 +63,8 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
 
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [deliveryPrice, setDeliveryPrice] = useState(0);
+  const [calculateDelivery, { isLoading: isCalculating }] = useCalculateDeliveryMutation();
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;
@@ -80,8 +83,37 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
 
   const finalPrice = selected.finalPrice || (isPreorder ? 2499 * 0.8 : 2499);
   
-  // Рассчитываем итоговую сумму с учётом количества
-  const totalAmount = finalPrice * quantity;
+  // Рассчитываем итоговую сумму с учётом количества и ДОСТАВКИ
+  const totalAmount = (finalPrice * quantity) + deliveryPrice;
+
+  const watchCity = methods.watch("city");
+  const watchAddress = methods.watch("address");
+
+  // Авто-расчет доставки при изменении адреса
+  useEffect(() => {
+    const calc = async () => {
+      if (watchCity && watchAddress && watchAddress.length > 5) {
+        try {
+          const res = await calculateDelivery({
+            city: watchCity,
+            address: watchAddress,
+            items: [{ product_id: productId, quantity: quantity, weight: 0.5, name: selected.title || "Футболка" }]
+          }).unwrap();
+          
+          if (res.pricing_total) {
+             // Парсим "469.7 RUB" в число
+             const price = parseFloat(res.pricing_total.split(' ')[0]);
+             setDeliveryPrice(price);
+          }
+        } catch (err) {
+          console.warn("Delivery calculation error", err);
+        }
+      }
+    };
+    const timer = setTimeout(calc, 1000); // Дебаунс 1 сек
+    return () => clearTimeout(timer);
+  }, [watchCity, watchAddress, quantity, productId, calculateDelivery, selected.title]);
+
 
   const onSubmit = async (data) => {
     setSubmitError("");
@@ -276,8 +308,19 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             {...register("saveAddress")}
           />
 
-          <div style={{ marginTop: '10px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
-            * Доставка осуществляется через Яндекс Доставку
+          <div className="delivery-price-block">
+            <FaTruck />
+            {isCalculating ? (
+              <span>Считаем доставку...</span>
+            ) : deliveryPrice > 0 ? (
+              <span>Яндекс Доставка: <b>{formatRub(deliveryPrice)}</b></span>
+            ) : (
+              <span>Введите адрес для расчета доставки</span>
+            )}
+          </div>
+
+          <div className="delivery-info-hint">
+            * Доставка осуществляется курьером Яндекс Доставки до вашей двери
           </div>
         </div>
 
