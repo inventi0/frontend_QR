@@ -1,4 +1,5 @@
 import { MainBanner } from "../components/MainBanner/MainBanner";
+import { UserPath } from "../components/UserPath/UserPath";
 import { UsageScenarios } from "../components/UsageScenarious/UsageScenarios";
 import "./MainPage.scss";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +14,12 @@ export const MainPage = () => {
   return (
     <div>
       <p className="range__text">
-        <b>S&S</b> - Это не только амбициозный стартап, <br />
-        но и комьюнити, стремительно набирающее обороты.
+        Одна футболка. Множество смыслов
       </p>
 
       <MainBanner onClickHandler={handleBuyClick} />
+
+      <UserPath />
 
       <UsageScenarios />
     </div>

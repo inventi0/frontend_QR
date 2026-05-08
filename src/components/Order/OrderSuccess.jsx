@@ -1,4 +1,4 @@
-import "./Order.scss";
+import "./order.scss";
 import { FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 

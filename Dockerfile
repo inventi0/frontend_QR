@@ -1,27 +1,10 @@
 # ============================================
-# Stage 1: Builder
-# ============================================
-FROM node:22-alpine AS build
-
-WORKDIR /app
-
-# Копирование package files и установка зависимостей
-COPY package*.json ./
-RUN npm ci --ignore-scripts
-
-# Копирование исходного кода
-COPY . .
-
-# Сборка production bundle
-RUN npm run build
-
-# ============================================
-# Stage 2: Runtime (Nginx)
+# Runtime (Nginx)
 # ============================================
 FROM nginx:stable-alpine
 
-# Копирование build артефактов
-COPY --from=build /app/dist /usr/share/nginx/html
+# Копирование готового билда из локальной папки dist
+COPY dist /usr/share/nginx/html
 
 # Копирование конфигурации Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf

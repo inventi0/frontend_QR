@@ -1,5 +1,5 @@
 import React from "react";
-import "./Sidebar.scss";
+import "./sidebar.scss";
 import Close from "../icons/Close";
 
 export const Sidebar = ({
