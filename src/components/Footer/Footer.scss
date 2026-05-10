@@ -159,6 +159,15 @@
         }
       }
 
+      .footer__legal-details {
+        margin: 15px 0;
+        p {
+          font-size: 15px;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 5px;
+        }
+      }
+
       .footer__legal-link {
         font-weight: 600;
         text-decoration: none;

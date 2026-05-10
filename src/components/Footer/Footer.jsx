@@ -82,6 +82,10 @@ export const Footer = () => {
             <Mail />
             Eduard_III@mail.ru
           </a>
+          <div className="footer__legal-details">
+            <p>ИП Шамасов Эдуард Радикович</p>
+            <p>ИНН 860326052406</p>
+          </div>
           <Link to="/legal-info" className="footer__legal-link">
             Правовая информация
           </Link>
