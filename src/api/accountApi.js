@@ -82,6 +82,7 @@ export const accountApi = createApi({
         first_name,
         last_name,
         delivery_address,
+        destination_station_id,
         zip_code,
         use_yandex_delivery,
       }) => ({
@@ -95,6 +96,7 @@ export const accountApi = createApi({
           first_name,
           last_name,
           delivery_address,
+          destination_station_id,
           zip_code,
           use_yandex_delivery,
         },
@@ -166,10 +168,10 @@ export const accountApi = createApi({
       }),
     }),
     calculateDelivery: builder.mutation({
-      query: ({ city, address, items }) => ({
+      query: ({ city, address, destination_station_id, items }) => ({
         url: "/delivery/calculate",
         method: "POST",
-        body: { city, address, items },
+        body: { city, address, destination_station_id, items },
         headers: { "Content-Type": "application/json" },
       }),
     }),
