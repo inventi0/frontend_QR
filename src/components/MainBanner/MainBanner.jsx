@@ -2,7 +2,7 @@ import "./MainBanner.scss";
 import tshirtImg from "../../assets/tshirt_mockup.png";
 import { TbQrcode } from "react-icons/tb";
 
-export const MainBanner = ({ onClickHandler }) => {
+export const MainBanner = () => {
   return (
     <>
       <div className="hero">
@@ -18,9 +18,6 @@ export const MainBanner = ({ onClickHandler }) => {
             — твои правила.
           </p>
           <div className="hero__actions">
-            <button className="btn-primary" onClick={() => onClickHandler()}>
-              КУПИТЬ
-            </button>
             <div className="hero__status">
               <div className="hero__status-row">
                 <span className="hero__status-prompt">&gt;</span>

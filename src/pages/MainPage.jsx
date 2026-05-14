@@ -14,10 +14,29 @@ export const MainPage = () => {
 
   return (
     <div className="main-page">
-      <MainBanner onClickHandler={handleBuyClick} />
+      <MainBanner />
       <HowItWorks />
       <UserPath />
       <UsageScenarios />
+
+      <section className="main-cta">
+        <div className="main-cta__glow" />
+        <div className="main-cta__tag">Ready to Deploy</div>
+        <h2 className="main-cta__title">
+          <span className="main-cta__num">04 //</span>
+          Твой QR — Твои Правила
+        </h2>
+        <p className="main-cta__desc">
+          Один заказ. Бесконечные возможности.
+        </p>
+        <button className="main-cta__btn" onClick={handleBuyClick}>
+          КУПИТЬ
+        </button>
+        <div className="main-cta__status">
+          <span>&gt; SYSTEM.READY</span>
+          <span>&gt; AWAITING_ORDER<span className="main-cta__blink">_</span></span>
+        </div>
+      </section>
     </div>
   );
 };
