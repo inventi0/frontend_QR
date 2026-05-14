@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getSession } from "../utils/session";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://79.143.30.97:80";
+const BASE_URL = import.meta.env.VITE_API_URL || "https://qreate.space/api";
 
 export const accountApi = createApi({
   reducerPath: "accountApi",
@@ -82,6 +82,7 @@ export const accountApi = createApi({
         first_name,
         last_name,
         delivery_address,
+        destination_station_id,
         zip_code,
         use_yandex_delivery,
       }) => ({
@@ -95,6 +96,7 @@ export const accountApi = createApi({
           first_name,
           last_name,
           delivery_address,
+          destination_station_id,
           zip_code,
           use_yandex_delivery,
         },
@@ -165,6 +167,14 @@ export const accountApi = createApi({
         headers: { "Content-Type": "application/json" },
       }),
     }),
+    calculateDelivery: builder.mutation({
+      query: ({ city, address, destination_station_id, items }) => ({
+        url: "/delivery/calculate",
+        method: "POST",
+        body: { city, address, destination_station_id, items },
+        headers: { "Content-Type": "application/json" },
+      }),
+    }),
   }),
 });
 
@@ -181,4 +191,5 @@ export const {
   useUpdateTemplateFileMutation,
   useCreatePaymentMutation,
   useSyncOrderDeliveryStatusMutation,
+  useCalculateDeliveryMutation,
 } = accountApi;

@@ -1,18 +1,20 @@
 # ============================================
-# Stage 1: Builder
+# Stage 1: Build
 # ============================================
-FROM node:22-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Копирование package files и установка зависимостей
+# Копируем файлы зависимостей
 COPY package*.json ./
-RUN npm ci --ignore-scripts
 
-# Копирование исходного кода
+# Установка зависимостей
+RUN npm install
+
+# Копируем исходный код
 COPY . .
 
-# Сборка production bundle
+# Сборка проекта
 RUN npm run build
 
 # ============================================
@@ -20,7 +22,7 @@ RUN npm run build
 # ============================================
 FROM nginx:stable-alpine
 
-# Копирование build артефактов
+# Копирование билда из предыдущего этапа
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Копирование конфигурации Nginx

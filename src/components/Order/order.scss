@@ -43,13 +43,13 @@
     position: absolute;
     top: 16px;
     left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.6);
     font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     cursor: pointer;
     padding: 4px 8px;
     border-radius: var(--radius-s);
@@ -61,8 +61,6 @@
     }
   }
 }
-
-
 
 .shirt-options {
   display: flex;
@@ -195,7 +193,6 @@
   }
 }
 
-/* --- Order Summary --- */
 .order-summary {
   display: flex;
   gap: 16px;
@@ -259,23 +256,34 @@
   }
 }
 
-/* --- Legacy summary (remove if unused) --- */
-.order-form .summary {
-  margin-bottom: 20px;
+.delivery-price-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(122, 215, 255, 0.08);
+  border: 1px solid rgba(122, 215, 255, 0.2);
+  border-radius: var(--radius-m);
+  padding: 12px 16px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #f3f3f3;
 
-  & div {
-    display: flex;
-    justify-content: space-between;
-    font-size: 20px;
-    margin-top: 10px;
-    color: #dcdcdc;
+  svg {
+    color: #5fd6ff;
+    font-size: 18px;
   }
 
-  @media (max-width: 568px) {
-    & img {
-      width: 100%;
-    }
+  b {
+    color: #5fd6ff;
+    font-size: 16px;
   }
+}
+
+.delivery-info-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
 }
 
 .section {
@@ -345,7 +353,6 @@
   }
 }
 
-/* --- Offer Checkbox (themed) --- */
 .offer-checkbox {
   margin: 20px 0;
   padding: 16px;
@@ -462,13 +469,6 @@
 }
 
 .order-success {
-  margin-top: 12px;
-  color: #b7f7cb;
-  font-weight: 600;
-}
-
-/* --- Success Screen --- */
-.order-success {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -533,6 +533,56 @@
 
     @media (max-width: 480px) {
       flex-direction: column;
+    }
+  }
+}
+
+.widget-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.widget-modal-content {
+  background: #1a1a1a;
+  width: 100%;
+  max-width: 800px;
+  border-radius: 20px;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255, 204, 0, 0.2);
+
+  .widget-close {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 35px;
+    height: 35px;
+    background: #ffcc00;
+    border: none;
+    border-radius: 50%;
+    color: #000;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+
+    &:hover {
+      transform: scale(1.1);
+      background: #fff;
     }
   }
 }

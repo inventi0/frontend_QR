@@ -1,15 +1,16 @@
 import { useForm, FormProvider } from "react-hook-form";
 import CustomInput from "../UI/CustomInput/CustomInput";
 import CustomCheckbox from "../UI/CustomCheckbox/CustomCheckbox";
-import "./Order.scss";
+import "./order.scss";
 import {
   useCreateOrderMutation,
   useSetQrTemplateMutation,
-  useCreatePaymentMutation,   // ← НОВОЕ
+  useCreatePaymentMutation,
+  useCalculateDeliveryMutation,
 } from "../../api/accountApi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatRub } from "../../utils/money";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaTruck, FaMapMarkerAlt } from "react-icons/fa";
 
 export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) => {
   // ← НОВОЕ: Состояние для количества товара
@@ -26,9 +27,13 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       city: "",
       postal: "",
       saveAddress: false,
-      useYandexDelivery: false,
+      useYandexDelivery: true,
     },
   });
+  
+  const [destinationStationId, setDestinationStationId] = useState(null);
+  const [pvzAddress, setPvzAddress] = useState("");
+  const [showWidget, setShowWidget] = useState(false);
 
   const cityOptions = [
     { value: "Москва", label: "Москва" },
@@ -62,6 +67,8 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
 
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [deliveryPrice, setDeliveryPrice] = useState(0);
+  const [calculateDelivery, { isLoading: isCalculating }] = useCalculateDeliveryMutation();
 
   const productId = selected?.productId || 1;
   const templateId = selected?.templateId || null;
@@ -80,14 +87,109 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
 
   const finalPrice = selected.finalPrice || (isPreorder ? 2499 * 0.8 : 2499);
   
-  // Рассчитываем итоговую сумму с учётом количества
-  const totalAmount = finalPrice * quantity;
+  // Рассчитываем итоговую сумму с учётом количества и ДОСТАВКИ
+  const totalAmount = (finalPrice * quantity) + deliveryPrice;
+
+  const watchCity = methods.watch("city");
+  const watchAddress = methods.watch("address");
+
+  // Загрузка виджета Яндекса
+  useEffect(() => {
+    if (!window.YaDelivery) {
+      const script = document.createElement("script");
+      // Возвращаемся к проверенному домену, который доступен
+      script.src = "https://ndd-widget.landpro.site/widget.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Подписка на событие выбора точки
+  useEffect(() => {
+    const handlePointSelected = (event) => {
+      const point = event.detail;
+      console.log("Selected PVZ:", point);
+      
+      setDestinationStationId(point.id);
+      const fullAddr = point.address?.full_address || point.address?.street || "Адрес выбран";
+      setPvzAddress(fullAddr);
+      
+      methods.setValue("address", fullAddr);
+      if (point.address?.locality) {
+        methods.setValue("city", point.address.locality);
+      }
+      
+      clearErrors("address");
+      setShowWidget(false);
+    };
+
+    document.addEventListener('YaNddWidgetPointSelected', handlePointSelected);
+    return () => {
+      document.removeEventListener('YaNddWidgetPointSelected', handlePointSelected);
+    };
+  }, [methods, clearErrors]);
+
+  // Инициализация виджета при открытии модалки
+  useEffect(() => {
+    if (showWidget && window.YaDelivery) {
+      const initTimer = setTimeout(() => {
+        window.YaDelivery.createWidget({
+          containerId: 'delivery-widget',
+          params: {
+            city: watchCity || "Москва",
+            size: {
+              height: "400px",
+              width: "100%"
+            },
+            show_select_button: true,
+            filter: {
+              type: ["pickup_point", "terminal"],
+              payment_methods: ["already_paid"]
+            }
+          }
+        });
+      }, 300); // Даем время на рендер контейнера
+      return () => clearTimeout(initTimer);
+    }
+  }, [showWidget, watchCity]);
+
+  const openPvzWidget = () => {
+    setShowWidget(true);
+  };
+
+  // Авто-расчет доставки при изменении ПВЗ
+  useEffect(() => {
+    const calc = async () => {
+      if (destinationStationId) {
+        try {
+          const res = await calculateDelivery({
+            city: watchCity || "Москва",
+            destination_station_id: destinationStationId,
+            items: [{ product_id: productId, quantity: quantity, weight: 0.5, name: selected.title || "Футболка" }]
+          }).unwrap();
+          
+          if (res.pricing_total) {
+             const price = parseFloat(res.pricing_total.split(' ')[0]);
+             setDeliveryPrice(price);
+          }
+        } catch (err) {
+          console.warn("Delivery calculation error", err);
+        }
+      }
+    };
+    calc();
+  }, [destinationStationId, quantity, productId, calculateDelivery, selected.title, watchCity]);
+
 
   const onSubmit = async (data) => {
     setSubmitError("");
     setSubmitSuccess("");
-
     try {
+      if (data.useYandexDelivery && !destinationStationId) {
+        setSubmitError("Пожалуйста, выберите пункт выдачи на карте");
+        return;
+      }
+
       // 1) Создание заказа
       const orderPayload = {
         items: [{ product_id: productId, quantity: quantity }],
@@ -96,7 +198,8 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
         city: data.city,
         first_name: data.firstName,
         last_name: data.lastName,
-        delivery_address: data.address,
+        delivery_address: pvzAddress || data.address,
+        destination_station_id: destinationStationId,
         zip_code: data.postal,
         use_yandex_delivery: true,
       };
@@ -167,7 +270,6 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
           </div>
         </div>
 
-        {/* ← НОВОЕ: Поле для выбора количества */}
         <div className="section">
           <h3>Количество</h3>
           <div className="quantity-control">
@@ -238,20 +340,32 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             />
           </div>
 
-          <CustomInput
-            placeholder="Адрес доставки (ул. ..., д., кв.)"
-            error={errors.address?.message}
-            maskOptions={{
-              mask: 'ул. street, д. house, кв. apartment',
-              lazy: false,
-              blocks: {
-                street: { mask: /^[а-яА-ЯёЁa-zA-Z0-9\s.\-]+$/ },
-                house: { mask: /^[0-9а-яА-Яa-zA-Z]+$/ },
-                apartment: { mask: /^[0-9а-яА-Яa-zA-Z]*$/ }
-              }
-            }}
-            {...registerWithClear("address", { required: "Обязательное поле" })}
-          />
+          <div className="pvz-selection-block">
+            {destinationStationId ? (
+              <div className="selected-pvz">
+                <FaMapMarkerAlt />
+                <div className="selected-pvz__info">
+                  <span className="selected-pvz__address">{pvzAddress}</span>
+                  <button type="button" className="change-pvz" onClick={openPvzWidget}>Изменить ПВЗ</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="select-pvz-btn" onClick={openPvzWidget}>
+                <FaMapMarkerAlt /> Выбрать пункт выдачи на карте
+              </button>
+            )}
+            
+            {showWidget && (
+              <div className="widget-modal-overlay">
+                <div className="widget-modal-content">
+                  <button type="button" className="widget-close" onClick={() => setShowWidget(false)}>×</button>
+                  <div id="delivery-widget" style={{ minHeight: '400px' }}></div>
+                </div>
+              </div>
+            )}
+
+            {errors.address && !destinationStationId && <span className="error-text">Выберите ПВЗ</span>}
+          </div>
 
           <div className="inline">
             <CustomInput
@@ -276,8 +390,19 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             {...register("saveAddress")}
           />
 
-          <div style={{ marginTop: '10px', fontSize: '13px', color: '#666', fontStyle: 'italic' }}>
-            * Доставка осуществляется через Яндекс Доставку
+          <div className="delivery-price-block">
+            <FaTruck />
+            {isCalculating ? (
+              <span>Считаем доставку...</span>
+            ) : deliveryPrice > 0 ? (
+              <span>Яндекс Доставка: <b>{formatRub(deliveryPrice)}</b></span>
+            ) : (
+              <span>Введите адрес для расчета доставки</span>
+            )}
+          </div>
+
+          <div className="delivery-info-hint">
+            * Доставка осуществляется до выбранного вами пункта выдачи заказов (ПВЗ)
           </div>
         </div>
 

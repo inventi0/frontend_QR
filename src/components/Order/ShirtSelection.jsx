@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./Order.scss";
+import "./order.scss";
 import { useGetProductQuery } from "../../api/productApi";
 import { formatRub } from "../../utils/money";
 import whiteImg from "../../assets/white.png";
