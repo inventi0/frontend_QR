@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Header.scss";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import Logo from "../icons/Logo";
 import Menu from "../icons/Menu";
 
 export const Header = ({
@@ -36,7 +35,7 @@ export const Header = ({
     <>
       <div className="header-container">
         <div className="logo" onClick={() => navigate("/")}>
-          <Logo />
+          <span className="logo__wordmark">Qreate.space</span>
         </div>
 
         <nav className="nav-links">

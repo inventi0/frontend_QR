@@ -13,8 +13,8 @@ import { formatRub } from "../../utils/money";
 import { FaArrowLeft, FaTruck, FaMapMarkerAlt } from "react-icons/fa";
 
 export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) => {
-  // ← НОВОЕ: Состояние для количества товара
   const [quantity, setQuantity] = useState(1);
+  const [forMyself, setForMyself] = useState(true);
   const methods = useForm({
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -193,6 +193,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       // 1) Создание заказа
       const orderPayload = {
         items: [{ product_id: productId, quantity: quantity }],
+        for_myself: forMyself,
         contact_info: data.contact,
         country: data.country,
         city: data.city,
@@ -217,7 +218,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
 
       // 3) ЗАГЛУШКА ОПЛАТЫ — переходим к успеху без YooKassa
       setSubmitSuccess("Заказ создан успешно!");
-      onSuccess?.(order);
+      onSuccess?.(order, forMyself);
 
     } catch (err) {
       const detail = err?.data?.detail;
@@ -268,6 +269,31 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
               <span className="value">{formatRub(selected.finalPrice)}</span>
             </div>
           </div>
+        </div>
+
+        <div className="section">
+          <h3>Для кого?</h3>
+          <div className="for-whom-toggle">
+            <button
+              type="button"
+              className={`for-whom-btn${forMyself ? " active" : ""}`}
+              onClick={() => setForMyself(true)}
+            >
+              Для себя
+            </button>
+            <button
+              type="button"
+              className={`for-whom-btn${!forMyself ? " active" : ""}`}
+              onClick={() => setForMyself(false)}
+            >
+              В подарок
+            </button>
+          </div>
+          {forMyself ? (
+            <p className="for-whom-hint">Футболка сразу будет привязана к вашему профилю.</p>
+          ) : (
+            <p className="for-whom-hint">Получатель сканирует QR-код на футболке и привязывает её к своему профилю.</p>
+          )}
         </div>
 
         <div className="section">

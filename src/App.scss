@@ -1,13 +1,13 @@
 #root {
-  max-width: 1440px;
-  margin: 0 auto;
+  width: 100%;
   padding: 16px;
   min-height: 100vh;
   box-sizing: border-box;
   background-image: url("./assets/backProfile.png");
   background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
 }
 
 .range {

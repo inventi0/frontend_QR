@@ -1,122 +1,194 @@
 .usage-scenarios {
-  margin-top: 50px;
+  margin-top: 60px;
   color: white;
   width: 100%;
   box-sizing: border-box;
   padding: 0 10px;
 
-  &__title {
-    display: block;
-    font-size: 64px;
-    margin-bottom: 50px;
+  // ─── Header ─────────────────────────────────────────────────────────────────
+  &__header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  &__tag {
+    display: inline-block;
+    background: #4f46e5;
+    color: white;
+    font-family: "Bicubik", monospace;
+    font-size: 10px;
     text-transform: uppercase;
-    font-family: "Bicubik";
+    letter-spacing: 3px;
+    padding: 6px 14px;
+    border-radius: var(--radius-s);
+    margin-bottom: 20px;
   }
 
-  &__columns {
-    display: flex;
-    gap: 40px;
-    justify-content: center;
-    align-items: flex-start;
+  &__section-num {
+    display: block;
+    font-family: "Bicubik", monospace;
+    font-size: 18px;
+    color: #4f46e5;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
   }
 
-  &__column {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
+  &__title {
+    font-family: "Akony", sans-serif;
+    font-size: 48px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.1;
   }
 
-  @media (max-width: 800px) {
-    &__title {
-      font-size: 48px;
-    }
-
-    &__columns {
-      display: block;
-    }
-
-    &__column {
-      margin-bottom: 30px;
-    }
-  }
-
-  @media (max-width: 568px) {
-    &__title {
-      font-size: 36px;
-    }
-  }
-
-  @media (max-width: 430px) {
-    &__title {
-      font-size: 24px;
-      margin-bottom: 25px;
-    }
+  // ─── Grid ───────────────────────────────────────────────────────────────────
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
   }
 }
 
-.usage-card {
-  background: #1a1a1a;
-  border-radius: var(--radius-xl);
-  max-width: 650px;
-  width: 100%;
-  padding: 30px;
+// ─── Scenario card ────────────────────────────────────────────────────────────
+.scenario-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.3s ease;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-  transform: rotate(-6deg);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+  cursor: default;
 
   &:hover {
-    transform: scale(1.03);
+    transform: translateY(-5px);
   }
 
-  &__content {
-    h3 {
-      font-size: 40px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
+  &--lime:hover  { border-color: rgba(79, 70, 229, 0.5); }
+  &--purple:hover { border-color: rgba(124, 109, 255, 0.5); }
+  &--white:hover  { border-color: rgba(255, 255, 255, 0.25); }
 
-    p {
-      font-size: 20px;
-      line-height: 1.4;
-      color: #ccc;
-    }
+  // ─── Image area ─────────────────────────────────────────────────────────────
+  &__image-wrap {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    background: #111;
   }
 
-  img {
-    max-width: 100%;
+  &__image {
     width: 100%;
-    min-height: 250px;
-    border-radius: var(--radius-m);
-    /* 12px (was 10px) */
-    object-fit: contain;
-    margin-top: 15px;
-  }
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.5;
+    filter: grayscale(40%);
+    transition: opacity 0.5s ease, transform 0.6s ease, filter 0.4s ease;
 
-  @media (max-width: 1280px) {
-    transform: rotate(0deg);
-  }
-
-  @media (max-width: 800px) {
-    max-width: 100%;
-
-    &:hover {
-      transform: scale(1);
+    .scenario-card:hover & {
+      opacity: 0.75;
+      transform: scale(1.06);
+      filter: grayscale(0%);
     }
   }
 
-  @media (max-width: 568px) {
-    padding: 20px;
-    &__content {
-      h3 {
-        font-size: 30px;
-      }
+  &__image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10, 10, 10, 0.8) 0%, transparent 60%);
+  }
 
-      p {
-        font-size: 16px;
-      }
+  &__mode {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-family: "Bicubik", monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 5px 10px;
+    border-radius: var(--radius-s);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid transparent;
+
+    &--lime   { color: #6366f1; border-color: rgba(79, 70, 229, 0.3); }
+    &--purple { color: #7c6dff; border-color: rgba(124, 109, 255, 0.3); }
+    &--white  { color: #ccc;    border-color: rgba(255, 255, 255, 0.2); }
+  }
+
+  // ─── Body ───────────────────────────────────────────────────────────────────
+  &__body {
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  &__title {
+    font-family: "Akony", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0 0 12px 0;
+  }
+
+  &__text {
+    font-family: "Bicubik", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #888;
+    margin: 0 0 20px 0;
+    flex: 1;
+  }
+
+  // ─── Footer row ─────────────────────────────────────────────────────────────
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 14px;
+    font-family: "Bicubik", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  &__data {
+    color: #555;
+  }
+
+  &__status {
+    &--lime   { color: #6366f1; }
+    &--purple { color: #7c6dff; }
+    &--white  { color: #aaa; }
+
+    .scenario-card--lime:hover &--lime     { color: #818cf8; }
+    .scenario-card--purple:hover &--purple { color: #a78bfa; }
+    .scenario-card--white:hover &--white   { color: #e5e7eb; }
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .usage-scenarios {
+    &__grid {
+      grid-template-columns: 1fr;
+      max-width: 520px;
+      margin: 0 auto;
     }
+
+    &__title { font-size: 36px; }
+  }
+
+  .scenario-card__image-wrap { height: 200px; }
+}
+
+@media (max-width: 568px) {
+  .usage-scenarios {
+    margin-top: 40px;
+    &__title { font-size: 28px; }
+    &__section-num { font-size: 14px; }
   }
 }

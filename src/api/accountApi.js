@@ -15,7 +15,7 @@ export const accountApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Qr", "Templates", "Orders"],
+  tagTypes: ["Qr", "Templates", "Orders", "MyProducts"],
   endpoints: (builder) => ({
     getUserQr: builder.query({
       query: (userId) => `/qr/by-user/${userId}`,
@@ -76,6 +76,7 @@ export const accountApi = createApi({
     createOrder: builder.mutation({
       query: ({
         items,
+        for_myself = true,
         contact_info,
         country,
         city,
@@ -90,6 +91,7 @@ export const accountApi = createApi({
         method: "POST",
         body: {
           items,
+          for_myself,
           contact_info,
           country,
           city,
@@ -102,7 +104,7 @@ export const accountApi = createApi({
         },
         headers: { "Content-Type": "application/json" },
       }),
-      invalidatesTags: [{ type: "Orders", id: "LIST" }],
+      invalidatesTags: [{ type: "Orders", id: "LIST" }, { type: "MyProducts", id: "LIST" }],
     }),
     syncOrderDeliveryStatus: builder.mutation({
       query: (orderId) => ({
@@ -175,6 +177,24 @@ export const accountApi = createApi({
         headers: { "Content-Type": "application/json" },
       }),
     }),
+
+    // ── Activation / Claim ─────────────────────────────────────────────────
+    getProductByCode: builder.query({
+      query: (code) => `/products/activate/${code}`,
+    }),
+
+    claimProduct: builder.mutation({
+      query: (code) => ({
+        url: `/products/activate/${code}/claim`,
+        method: "POST",
+      }),
+      invalidatesTags: [{ type: "MyProducts", id: "LIST" }],
+    }),
+
+    getMyProducts: builder.query({
+      query: () => "/products/my-products",
+      providesTags: [{ type: "MyProducts", id: "LIST" }],
+    }),
   }),
 });
 
@@ -192,4 +212,7 @@ export const {
   useCreatePaymentMutation,
   useSyncOrderDeliveryStatusMutation,
   useCalculateDeliveryMutation,
+  useGetProductByCodeQuery,
+  useClaimProductMutation,
+  useGetMyProductsQuery,
 } = accountApi;

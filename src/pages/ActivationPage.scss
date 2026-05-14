@@ -1,0 +1,248 @@
+.activation-page {
+  color: white;
+  min-height: 70vh;
+  width: 100%;
+  box-sizing: border-box;
+
+  &--center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+.activation-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xxl);
+  padding: 40px 36px;
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+
+  &--error {
+    text-align: center;
+
+    h2 {
+      font-family: "Akony", sans-serif;
+      font-size: 24px;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    p {
+      color: #888;
+      font-size: 14px;
+      margin: 0;
+    }
+  }
+}
+
+// ── Status badge ──────────────────────────────────────────────────────────────
+.activation-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Bicubik", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 6px 12px;
+  border-radius: var(--radius-s);
+  align-self: flex-start;
+
+  &--owned {
+    background: rgba(79, 70, 229, 0.15);
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    color: #818cf8;
+  }
+
+  &--unclaimed {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #aaa;
+  }
+}
+
+// ── Dot ───────────────────────────────────────────────────────────────────────
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+.activation-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+
+  &--pulse {
+    animation: pulseDot 1.5s ease-in-out infinite;
+  }
+}
+
+// ── Product preview ───────────────────────────────────────────────────────────
+.activation-product {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+
+  &__img-wrap {
+    width: 110px;
+    height: 110px;
+    border-radius: var(--radius-l);
+    overflow: hidden;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+  }
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 4px;
+  }
+
+  &__title {
+    font-family: "Akony", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 8px;
+    font-family: "Bicubik", monospace;
+    font-size: 11px;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  &__desc {
+    font-size: 13px;
+    line-height: 1.55;
+    color: #888;
+    margin: 0;
+  }
+}
+
+// ── Hint text ─────────────────────────────────────────────────────────────────
+.activation-hint {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #888;
+  margin: 0;
+  border-left: 2px solid rgba(79, 70, 229, 0.5);
+  padding-left: 12px;
+}
+
+// ── Error message ─────────────────────────────────────────────────────────────
+.activation-error {
+  font-family: "Bicubik", monospace;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: var(--radius-s);
+  padding: 10px 14px;
+  margin: 0;
+}
+
+// ── Auth prompt ───────────────────────────────────────────────────────────────
+.activation-auth-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  p {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+  }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.activation-btn {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: var(--radius-l);
+  font-family: "Bicubik", sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 100%;
+
+  &:hover:not(:disabled) {
+    background: #6366f1;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #aaa;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+  }
+}
+
+// ── Spinner (re-use pattern from PublicProfilePage) ───────────────────────────
+.spinner-ring {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #7c6dff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .activation-card {
+    padding: 28px 20px;
+  }
+
+  .activation-product {
+    flex-direction: column;
+
+    &__img-wrap {
+      width: 100%;
+      height: 180px;
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { MainBanner } from "../components/MainBanner/MainBanner";
+import { HowItWorks } from "../components/HowItWorks/HowItWorks";
 import { UserPath } from "../components/UserPath/UserPath";
 import { UsageScenarios } from "../components/UsageScenarious/UsageScenarios";
 import "./MainPage.scss";
@@ -12,19 +13,13 @@ export const MainPage = () => {
   };
 
   return (
-    <div>
-      <p className="range__text">
-        Одна футболка. Множество смыслов
-      </p>
-
+    <div className="main-page">
       <MainBanner onClickHandler={handleBuyClick} />
-
+      <HowItWorks />
       <UserPath />
-
       <UsageScenarios />
     </div>
   );
 };
 
-// ✅ Default export для lazy loading
 export default MainPage;

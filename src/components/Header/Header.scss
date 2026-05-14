@@ -24,6 +24,20 @@
   }
 }
 
+.logo {
+  cursor: pointer;
+  user-select: none;
+}
+
+.logo__wordmark {
+  font-family: "Bicubik", monospace;
+  font-size: 15px;
+  color: white;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  image-rendering: pixelated;
+}
+
 .nav-links {
   display: flex;
   gap: 20px;

@@ -1,68 +1,341 @@
-.scan-and-style-container {
+// ─── Hero Section ────────────────────────────────────────────────────────────
+.hero {
   margin-top: 20px;
-  background-size: cover;
-  background-position: center;
-  height: 620px;
-  border-radius: var(--radius-xxl);
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-image: url("../../assets/shirts.png");
-  background-size: cover;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  min-height: 580px;
+  padding: 40px 10px;
   color: white;
-  position: relative;
-  font-family: "Bicubik", sans-serif;
 
-  @media (max-width: 1024px) {
-    padding: 16px;
+  // Left: label above headline
+  &__label {
+    font-family: "Bicubik", monospace;
+    font-size: 11px;
+    color: #7c6dff;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    &::before {
+      content: "";
+      width: 32px;
+      height: 2px;
+      background: #7c6dff;
+      display: inline-block;
+      flex-shrink: 0;
+    }
   }
 
-  @media (max-width: 800px) {
-    height: 400px;
+  // Big headline
+  &__title {
+    font-family: "Akony", sans-serif;
+    font-size: 88px;
+    font-weight: bold;
+    line-height: 0.88;
+    text-transform: uppercase;
+    margin: 0 0 32px 0;
+    display: flex;
+    flex-direction: column;
+
+    &-line {
+      display: block;
+
+      &--outline {
+        color: transparent;
+        -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
+      }
+
+      &--accent {
+        color: #7c6dff;
+      }
+    }
+
+    &-accent {
+      color: #7c6dff;
+    }
   }
 
-  width: 100%;
-  box-sizing: border-box;
+  // Description
+  &__desc {
+    font-size: 15px;
+    line-height: 1.65;
+    color: #b0b0b0;
+    max-width: 460px;
+    border-left: 2px solid #7c6dff;
+    padding-left: 16px;
+    margin-bottom: 40px;
+    font-family: "Bicubik", monospace;
+  }
 
-  @media (max-width: 480px) {
-    height: 350px;
-    padding: 12px;
+  // CTA row
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  &__status {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__status-row {
+    display: flex;
+    gap: 8px;
+    font-family: "Bicubik", monospace;
+    font-size: 10px;
+  }
+
+  &__status-prompt {
+    color: #555;
+  }
+
+  &__status-text {
+    color: #888;
+
+    &--active {
+      color: #7c6dff;
+    }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  &__blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  // ─── Right: product visual ──────────────────────────────────────────────────
+  &__visual {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  &__image-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-xxl);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0d0d0d;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: grayscale(20%) contrast(1.1);
+    transition: transform 0.8s ease, filter 0.5s ease;
+
+    .hero__image-wrap:hover & {
+      transform: scale(1.04);
+      filter: grayscale(0%) contrast(1.15);
+    }
+  }
+
+  // Animated scan line
+  @keyframes scanLine {
+    0%   { top: -2px; }
+    50%  { top: 101%; }
+    100% { top: -2px; }
+  }
+
+  &__scan-line {
+    position: absolute;
+    inset-inline: 0;
+    height: 2px;
+    background: rgba(124, 109, 255, 0.7);
+    box-shadow: 0 0 12px rgba(124, 109, 255, 0.9);
+    animation: scanLine 3s linear infinite;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  // Corner brackets
+  &__corner {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-color: #7c6dff;
+    border-style: solid;
+    z-index: 3;
+    opacity: 0.8;
+
+    &--tl { top: 14px; left: 14px; border-width: 2px 0 0 2px; }
+    &--tr { top: 14px; right: 14px; border-width: 2px 2px 0 0; }
+    &--bl { bottom: 14px; left: 14px; border-width: 0 0 2px 2px; }
+    &--br { bottom: 14px; right: 14px; border-width: 0 2px 2px 0; }
+  }
+
+  // QR badge (bottom-right)
+  &__qr-badge {
+    position: absolute;
+    bottom: 18px;
+    right: 18px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(124, 109, 255, 0.5);
+    border-radius: var(--radius-m);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 4;
+    backdrop-filter: blur(4px);
+
+    span {
+      font-family: "Bicubik", monospace;
+      font-size: 7px;
+      color: #7c6dff;
+      letter-spacing: 3px;
+    }
+  }
+
+  &__qr-icon {
+    font-size: 38px;
+    color: #7c6dff;
+    filter: drop-shadow(0 0 8px rgba(124, 109, 255, 0.6));
+  }
+
+  // Live badge (top-left)
+  &__live-badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-s);
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "Bicubik", monospace;
+    font-size: 9px;
+    color: white;
+    letter-spacing: 2px;
+    z-index: 4;
+  }
+
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  &__live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff3b3b;
+    animation: pulseDot 1s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(255, 59, 59, 0.8);
+    flex-shrink: 0;
   }
 }
 
-.text-block h1 {
-  font-family: "Akony";
-  font-size: 64px;
-  font-weight: bold;
-  line-height: 1.2;
-  text-transform: uppercase;
+// ─── Ticker Strip ─────────────────────────────────────────────────────────────
+.hero__ticker {
+  background: #4f46e5;
+  color: black;
+  padding: 11px 0;
+  overflow: hidden;
+  border-radius: var(--radius-l);
+  margin-top: 4px;
 
-  @media (max-width: 1024px) {
-    font-size: 48px;
-  }
+  &-track {
+    display: flex;
+    white-space: nowrap;
+    animation: tickerScroll 28s linear infinite;
+    font-family: "Akony", sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: white;
 
-  @media (max-width: 800px) {
-    font-size: 36px;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 28px;
+    span {
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
   }
 }
 
-.buttons {
-  display: flex;
-  gap: 24px;
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
+// ─── Buy button ───────────────────────────────────────────────────────────────
 .btn-primary {
   background-color: #4f46e5;
   color: white;
   border: none;
-  padding: 16px 32px;
-  font-size: 36px;
+  padding: 16px 36px;
+  font-size: 22px;
   border-radius: var(--radius-xl);
   cursor: pointer;
   font-family: "Bicubik", sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background-color: #6366f1;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    gap: 32px;
+    padding: 24px 10px;
+
+    &__visual { justify-content: center; order: -1; }
+    &__image-wrap { max-width: 380px; }
+    &__title { font-size: 72px; }
+    &__content { order: 1; }
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    gap: 24px;
+    &__title { font-size: 56px; }
+    &__image-wrap { max-width: 320px; }
+    &__desc { font-size: 13px; }
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 16px 10px;
+    &__title { font-size: 40px; }
+    &__image-wrap { max-width: 280px; }
+    &__actions { flex-direction: column; align-items: flex-start; gap: 16px; }
+  }
+
+  .btn-primary {
+    font-size: 18px;
+    padding: 14px 28px;
+  }
+
+  .hero__ticker-track { font-size: 13px; }
 }

@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense } from "react";
 import "./App.scss";
 import "./pages/AssortmentPage.scss";
 import { Modal } from "./components/Modal/Modal";
@@ -19,6 +19,7 @@ const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
 const CreatorPage = lazy(() => import("./pages/CreatorPage"));
 const AssortmentPage = lazy(() => import("./pages/AssortmentPage"));
+const ActivationPage = lazy(() => import("./pages/ActivationPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const OfertaPage = lazy(() => import("./pages/OfertaPage"));
 const LegalInfoPage = lazy(() => import("./pages/LegalInfoPage"));
@@ -84,6 +85,15 @@ function App() {
               <Route path="/" element={<MainPage />} />
               <Route path="/creator" element={<CreatorPage />} />
               <Route path="/editor/:publicId/creator" element={<CreatorPage />} />
+              <Route
+                path="/activate/:code"
+                element={
+                  <ActivationPage
+                    isAuthenticated={isAuthenticated}
+                    onLoginRequest={openLogin}
+                  />
+                }
+              />
               <Route path="/reviews" element={<ReviewPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/oferta" element={<OfertaPage />} />

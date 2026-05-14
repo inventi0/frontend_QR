@@ -46,6 +46,7 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
   const [selection, setSelection] = useState(null);
   const [chosenProductId, setChosenProductId] = useState(null);
   const [orderResult, setOrderResult] = useState(null);
+  const [orderForMyself, setOrderForMyself] = useState(true);
   const { data: me } = useGetMeQuery();
   const userId = me?.id;
   const { data: qrData } = useGetUserQrQuery(userId, { skip: !userId });
@@ -77,8 +78,9 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
     setStep(1);
   };
 
-  const handleOrderSuccess = (result) => {
+  const handleOrderSuccess = (result, forMyself) => {
     setOrderResult(result);
+    setOrderForMyself(forMyself);
     setStep(3);
   };
 
@@ -210,6 +212,7 @@ export const AssortmentPage = ({ isAuthenticated, onLoginRequest, onRegisterRequ
         {step === 3 && (
           <OrderSuccess
             orderResult={orderResult}
+            forMyself={orderForMyself}
             onClose={handleClose}
           />
         )}
