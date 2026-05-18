@@ -3,7 +3,7 @@ import "./AuthModal.scss";
 import Close from "../icons/Close";
 import { useRegisterMutation } from "../../api/authApi";
 
-export const RegistrationForm = ({ onClose }) => {
+export const RegistrationForm = ({ onClose, onSuccess }) => {
   const [registerUser, { isLoading }] = useRegisterMutation();
   const [formValues, setFormValues] = useState({
     email: "",
@@ -88,9 +88,11 @@ export const RegistrationForm = ({ onClose }) => {
       const user = await registerUser(payload).unwrap();
 
       setSuccess(
-        `Готово! Пользователь ${user.username ?? user.email} зарегистрирован. Теперь можно войти.`
+        `Готово! Пользователь ${user.username ?? user.email} успешно зарегистрирован. Перенаправляем на вход...`
       );
-      window.location.reload();
+      setTimeout(() => {
+        onSuccess?.();
+      }, 2000);
       setFormValues({ email: "", username: "", password: "" });
       setAvatar(null);
       setAvatarPreview(null);

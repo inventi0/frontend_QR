@@ -98,7 +98,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
     if (!window.YaDelivery) {
       const script = document.createElement("script");
       // Возвращаемся к проверенному домену, который доступен
-      script.src = "https://ndd-widget.landpro.site/widget.js";
+      script.src = "https://ndd-widget.yandex.ru/widget.js";
       script.async = true;
       document.body.appendChild(script);
     }

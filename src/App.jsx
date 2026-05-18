@@ -129,7 +129,13 @@ function App() {
         />
       </Modal>
       <Modal active={registerModalActive} setActive={setRegisterModalActive}>
-        <RegistrationForm onClose={() => setRegisterModalActive(false)} />
+        <RegistrationForm 
+          onClose={() => setRegisterModalActive(false)} 
+          onSuccess={() => {
+            setRegisterModalActive(false);
+            setLoginModalActive(true);
+          }}
+        />
       </Modal>
     </ErrorBoundary>
   );
