@@ -1,15 +1,42 @@
 .modal-panel {
+  width: 100%;
+  max-width: 880px;
   max-height: 90dvh;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 25px 60px #00000059;
   backdrop-filter: blur(8px);
   color: white;
-  padding: 24px;
+  padding: 32px;
   padding-top: 48px;
   border-radius: var(--radius-xl);
   overflow-y: auto;
   position: relative;
+
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 36px;
+    align-items: start;
+    margin-top: 12px;
+
+    @media (max-width: 800px) {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  .checkout-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .checkout-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
   h2 {
     font-family: "Bicubik";
