@@ -1,7 +1,7 @@
 .modal-panel {
   width: 100%;
-  max-width: 880px;
-  max-height: 90dvh;
+  max-width: 1620px;
+  max-height: 92dvh;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 25px 60px #00000059;
@@ -15,10 +15,14 @@
 
   .checkout-grid {
     display: grid;
-    grid-template-columns: 1fr 1.15fr;
+    grid-template-columns: 0.6fr 1.1fr 1.9fr;
     gap: 36px;
     align-items: start;
     margin-top: 12px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr 1.2fr;
+    }
 
     @media (max-width: 800px) {
       grid-template-columns: 1fr;
@@ -27,6 +31,12 @@
   }
 
   .checkout-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .checkout-center {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -86,6 +96,244 @@
       color: white;
       background: rgba(255, 255, 255, 0.08);
     }
+  }
+
+  /* Yandex Map Modal and Selection Button Premium Styling */
+  .pvz-selection-block {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .select-pvz-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: var(--radius-m);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    width: 100%;
+
+    svg {
+      color: #ff334b;
+      font-size: 16px;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.07));
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+
+  .selected-pvz {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 18px;
+    border-radius: var(--radius-m);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    svg {
+      color: #ff334b;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .selected-pvz__info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+
+      .selected-pvz__address {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .change-pvz {
+        background: none;
+        border: none;
+        color: #ff334b;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+        text-align: left;
+        text-decoration: underline;
+        width: fit-content;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #ff5c70;
+        }
+      }
+    }
+  }
+
+  .widget-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+  }
+
+  .widget-modal-content {
+    background: rgba(20, 20, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
+    width: 90%;
+    max-width: 950px;
+    height: 80vh;
+    padding: 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .widget-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+  }
+
+  .checkout-right-map {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    
+    h3 {
+      font-size: 18px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+    }
+
+    .selected-pvz-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: var(--radius-m);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+
+      svg {
+        color: #ff334b;
+        font-size: 20px;
+        flex-shrink: 0;
+        animation: pulse 2s infinite;
+      }
+
+      &.select-hint {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        
+        svg {
+          color: rgba(255, 255, 255, 0.4);
+          animation: none;
+        }
+
+        span {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 14px;
+        }
+      }
+
+      .selected-pvz-badge__info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+
+        .selected-pvz-badge__label {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .selected-pvz-badge__value {
+          font-size: 14px;
+          color: white;
+          font-weight: 550;
+        }
+      }
+    }
+
+    .embedded-map-widget {
+      width: 100%;
+      height: 580px;
+      border-radius: var(--radius-l);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      background: #f4f4f4;
+
+      * {
+        color: #222222 !important;
+      }
+    }
+
+    .error-text {
+      color: #ff334b;
+      font-size: 13px;
+      margin-top: -8px;
+    }
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
   }
 }
 

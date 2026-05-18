@@ -38,6 +38,11 @@
       transform: translateY(0) scale(1);
       opacity: 1;
     }
+
+    // Expand width for the premium checkout order form to be widescreen
+    &:has(.order-form) {
+      width: min(1660px, 97vw) !important;
+    }
   }
 
   @media (max-width: 800px) {

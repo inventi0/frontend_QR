@@ -8,7 +8,7 @@ import {
   useCreatePaymentMutation,
   useCalculateDeliveryMutation,
 } from "../../api/accountApi";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatRub } from "../../utils/money";
 import { FaArrowLeft, FaTruck, FaMapMarkerAlt } from "react-icons/fa";
 
@@ -32,6 +32,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
   });
   
   const [destinationStationId, setDestinationStationId] = useState(null);
+  const [selectedCityFromMap, setSelectedCityFromMap] = useState("Москва");
   const [pvzAddress, setPvzAddress] = useState("");
   const [showWidget, setShowWidget] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(!!window.YaDelivery);
@@ -101,7 +102,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       return;
     }
     const script = document.createElement("script");
-    script.src = "https://ndd-widget.yandex.ru/widget.js";
+    script.src = "https://ndd-widget.landpro.site/widget.js";
     script.async = true;
     script.onload = () => {
       console.log("Yandex Delivery Widget script loaded successfully");
@@ -125,11 +126,11 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       
       methods.setValue("address", fullAddr);
       if (point.address?.locality) {
+        setSelectedCityFromMap(point.address.locality);
         methods.setValue("city", point.address.locality);
       }
       
       clearErrors("address");
-      setShowWidget(false);
     };
 
     document.addEventListener('YaNddWidgetPointSelected', handlePointSelected);
@@ -138,23 +139,41 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
     };
   }, [methods, clearErrors]);
 
-  // Инициализация виджета при открытии модалки
+  const lastInitializedCityRef = useRef("");
+
+  // Автоматическая инициализация виджета
   useEffect(() => {
-    if (showWidget && window.YaDelivery) {
+    if (window.YaDelivery && isScriptLoaded) {
+      // Если ПВЗ уже успешно выбран, НЕ пересоздаем и НЕ сбрасываем виджет
+      if (destinationStationId) return;
+
+      const targetCity = watchCity || "Москва";
+      
+      // Если город не поменялся, избегаем повторной инициализации
+      if (lastInitializedCityRef.current === targetCity) return;
+      
+      lastInitializedCityRef.current = targetCity;
+
       const initTimer = setTimeout(() => {
         try {
+          // Очищаем DOM-контейнер перед инициализацией во избежание дублирования карт
+          const container = document.getElementById('delivery-widget');
+          if (container) {
+            container.innerHTML = '';
+          }
+
           window.YaDelivery.createWidget({
             containerId: 'delivery-widget',
             params: {
-              city: watchCity || "Москва",
+              city: targetCity,
               size: {
-                height: "450px",
+                height: "100%",
                 width: "100%"
               },
               show_select_button: true,
+              source_platform_station: "0004ccff-edea-46fa-a1c0-30c34178fb0c",
               filter: {
-                type: ["pickup_point", "terminal"],
-                payment_methods: ["already_paid"]
+                type: ["pickup_point", "terminal"]
               }
             }
           });
@@ -164,11 +183,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
       }, 300); // Даем время на рендер контейнера
       return () => clearTimeout(initTimer);
     }
-  }, [showWidget, watchCity, isScriptLoaded]);
-
-  const openPvzWidget = () => {
-    setShowWidget(true);
-  };
+  }, [isScriptLoaded, watchCity, destinationStationId]);
 
   // Авто-расчет доставки при изменении ПВЗ
   useEffect(() => {
@@ -208,7 +223,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
         items: [{ product_id: productId, quantity: quantity }],
         contact_info: data.contact,
         country: data.country,
-        city: data.city,
+        city: data.city || selectedCityFromMap || "Москва",
         first_name: data.firstName,
         last_name: data.lastName,
         delivery_address: pvzAddress || data.address,
@@ -317,7 +332,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             </div>
           </div>
 
-          <div className="checkout-right">
+          <div className="checkout-center">
             <div className="section">
               <h3>Контакт</h3>
               <CustomInput
@@ -357,49 +372,13 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
                 />
               </div>
 
-              <div className="pvz-selection-block">
-                {destinationStationId ? (
-                  <div className="selected-pvz">
-                    <FaMapMarkerAlt />
-                    <div className="selected-pvz__info">
-                      <span className="selected-pvz__address">{pvzAddress}</span>
-                      <button type="button" className="change-pvz" onClick={openPvzWidget}>Изменить ПВЗ</button>
-                    </div>
-                  </div>
-                ) : (
-                  <button type="button" className="select-pvz-btn" onClick={openPvzWidget}>
-                    <FaMapMarkerAlt /> Выбрать пункт выдачи на карте
-                  </button>
-                )}
-                
-                {showWidget && (
-                  <div className="widget-modal-overlay">
-                    <div className="widget-modal-content">
-                      <button type="button" className="widget-close" onClick={() => setShowWidget(false)}>×</button>
-                      <div id="delivery-widget" style={{ minHeight: '400px' }}></div>
-                    </div>
-                  </div>
-                )}
-
-                {errors.address && !destinationStationId && <span className="error-text">Выберите ПВЗ</span>}
-              </div>
-
-              <div className="inline">
-                <CustomInput
-                  type="select"
-                  options={cityOptions}
-                  placeholder="Город"
-                  error={errors.city?.message}
-                  {...registerWithClear("city", { required: "Обязательное поле" })}
-                />
-                <CustomInput
-                  placeholder="Индекс"
-                  error={errors.postal?.message}
-                  {...registerWithClear("postal", {
-                    required: "Обязательное поле",
-                  })}
-                />
-              </div>
+              <CustomInput
+                placeholder="Индекс"
+                error={errors.postal?.message}
+                {...registerWithClear("postal", {
+                  required: "Обязательное поле",
+                })}
+              />
 
               <CustomCheckbox
                 label="Сохранить данные о доставке"
@@ -414,7 +393,7 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
                 ) : deliveryPrice > 0 ? (
                   <span>Яндекс Доставка: <b>{formatRub(deliveryPrice)}</b></span>
                 ) : (
-                  <span>Введите адрес для расчета доставки</span>
+                  <span>Выберите ПВЗ на карте для расчета</span>
                 )}
               </div>
 
@@ -453,6 +432,26 @@ export const OrderForm = ({ selected, isPreorder, onSuccess, onClose, onBack }) 
             </div>
 
             {submitError && <div className="order-error">{submitError}</div>}
+          </div>
+
+          <div className="checkout-right-map">
+            <h3>Пункт выдачи на карте</h3>
+            {destinationStationId ? (
+              <div className="selected-pvz-badge">
+                <FaMapMarkerAlt />
+                <div className="selected-pvz-badge__info">
+                  <span className="selected-pvz-badge__label">Выбранный ПВЗ:</span>
+                  <span className="selected-pvz-badge__value">{pvzAddress}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="selected-pvz-badge select-hint">
+                <FaMapMarkerAlt />
+                <span>Выберите ПВЗ на карте ниже</span>
+              </div>
+            )}
+            <div id="delivery-widget" className="embedded-map-widget"></div>
+            {errors.address && !destinationStationId && <span className="error-text">Пожалуйста, выберите ПВЗ на карте</span>}
           </div>
         </div>
       </form>
